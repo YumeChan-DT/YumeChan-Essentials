@@ -23,6 +23,12 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<OutDir>$(SolutionDir)build\Modules</OutDir>
 	</PropertyGroup>
+	<ItemGroup>
+	  <None Remove=".git" />
+	  <None Remove=".gitignore" />
+	  <None Remove="LICENSE" />
+	  <None Remove="README.md" />
+	</ItemGroup>
 	
 	<ItemGroup>
 		<PackageReference Include="Discord.Net" Version="2.1.1" />
