@@ -1,7 +1,6 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 
-namespace Nodsoft.YumeChan.Modules.Network
+namespace Nodsoft.YumeChan.Essentials.Network
 {
 	static class Utils
 	{

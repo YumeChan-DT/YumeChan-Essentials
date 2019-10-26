@@ -10,7 +10,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nodsoft.YumeChan.Modules.Network
+namespace Nodsoft.YumeChan.Essentials.Network
 {
 	[Group("ping")]
 	public class PingModule : ModuleBase<SocketCommandContext>

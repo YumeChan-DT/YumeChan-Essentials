@@ -1,12 +1,12 @@
-﻿using Nodsoft.YumeChan.PluginBase;
+using Nodsoft.YumeChan.PluginBase;
 using System;
 using System.Threading.Tasks;
 
-namespace Nodsoft.YumeChan.Modules
+namespace Nodsoft.YumeChan.Essentials
 {
-	public class ModuleProperties : IPlugin
+	public class PluginProperties : IPlugin
 	{
-		public Version PluginVersion { get; } = typeof(ModuleProperties).Assembly.GetName().Version;
+		public Version PluginVersion { get; } = typeof(PluginProperties).Assembly.GetName().Version;
 
 		public string PluginDisplayName { get; } = "Yume-Chan Essentials";
 

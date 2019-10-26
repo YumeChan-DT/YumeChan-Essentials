@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Nodsoft.YumeChan.Modules.Network
+namespace Nodsoft.YumeChan.Essentials.Network
 {
 	[Group("resolve")]
 	public class Resolve : ModuleBase<SocketCommandContext>

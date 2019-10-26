@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-using static Nodsoft.YumeChan.Modules.Chat.Utils;
+using static Nodsoft.YumeChan.Essentials.Chat.Utils;
 
-namespace Nodsoft.YumeChan.Modules.Chat
+namespace Nodsoft.YumeChan.Essentials.Chat
 {
 	[Group("videobridge"), Alias ("vb")]
 	public class VideoBridge : ModuleBase<SocketCommandContext>

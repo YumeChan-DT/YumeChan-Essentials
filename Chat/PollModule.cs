@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nodsoft.YumeChan.Modules.Chat
+namespace Nodsoft.YumeChan.Essentials.Chat
 {
 	[Group("poll")]
 	public class PollModule : ModuleBase<SocketCommandContext>

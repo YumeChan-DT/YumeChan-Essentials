@@ -4,7 +4,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Nodsoft.YumeChan.Modules.Chat
+namespace Nodsoft.YumeChan.Essentials.Chat
 {
 	public static class Utils
 	{

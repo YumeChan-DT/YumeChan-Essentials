@@ -3,10 +3,10 @@ using Discord.Commands;
 using Discord.WebSocket;
 using System.Threading.Tasks;
 
-using static Nodsoft.YumeChan.Modules.Chat.Utils;
-using static Nodsoft.YumeChan.Modules.Chat.VideoBridge;
+using static Nodsoft.YumeChan.Essentials.Chat.Utils;
+using static Nodsoft.YumeChan.Essentials.Chat.VideoBridge;
 
-namespace Nodsoft.YumeChan.Modules.Chat
+namespace Nodsoft.YumeChan.Essentials.Chat
 {
 	public class Invite : ModuleBase<SocketCommandContext>
 	{
