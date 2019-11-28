@@ -4,26 +4,20 @@ using System.Threading.Tasks;
 
 namespace Nodsoft.YumeChan.Essentials
 {
-	public class PluginProperties : IPlugin
+	public class PluginProperties : Plugin
 	{
-		public Version PluginVersion { get; } = typeof(PluginProperties).Assembly.GetName().Version;
+		public override string PluginDisplayName { get; } = "Yume-Chan Essentials";
 
-		public string PluginDisplayName { get; } = "Yume-Chan Essentials";
+		public override bool PluginStealth { get; } = false;
 
-		public bool PluginStealth { get; } = false;
-
-		public bool PluginLoaded { get; internal set; }
-
-		public Task LoadPlugin()
+		public override async Task LoadPlugin()
 		{
-			PluginLoaded = true;
-			return Task.CompletedTask;
+			await base.LoadPlugin();
 		}
 
-		public Task UnloadPlugin()
+		public override async Task UnloadPlugin()
 		{
-			PluginLoaded = false;
-			return Task.CompletedTask;
+			await base.UnloadPlugin();
 		}
 	}
 }
