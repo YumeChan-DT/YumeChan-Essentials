@@ -10,7 +10,7 @@ using static Nodsoft.YumeChan.Essentials.Chat.Utils;
 
 namespace Nodsoft.YumeChan.Essentials.Chat
 {
-	[Group("videobridge"), Alias ("vb")]
+	[Group("videobridge"), Alias ("vb"), Obsolete("Feature was implemented in Discord. See : https://blog.discord.com/wave-hello-to-server-video-85dcef1128f0")]
 	public class VideoBridge : ModuleBase<SocketCommandContext>
 	{
 		IVoiceChannel CurrentChannel { get; set; }
@@ -117,7 +117,7 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 
 		internal async Task<StringBuilder> BuildUsersMentionList()
 		{
-			var users = FindUserCurrentVoiceChannel(Context).GetUsersAsync().Flatten().GetEnumerator(); // I HATE var, but no choice here, as apparently IAsyncEnumerator is duped on 2 Libraries...
+			using var users = FindUserCurrentVoiceChannel(Context).GetUsersAsync().Flatten().GetEnumerator(); // I HATE var, but no choice here, as apparently IAsyncEnumerator is duped on 2 Libraries...
 			StringBuilder mentionList = new StringBuilder(Context.User.Mention);
 
 			if (PingAllusersInChannel)
