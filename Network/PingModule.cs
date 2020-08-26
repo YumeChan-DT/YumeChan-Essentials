@@ -31,8 +31,8 @@ namespace Nodsoft.YumeChan.Essentials.Network
 			}
 
 			// 2. Ping the IP
-			int pingCount = 4;
-			PingModuleReply[] pingReplies = TcpPing(hostResolved, 80, pingCount).Result;
+			const int PingCount = 4;
+			PingModuleReply[] pingReplies = TcpPing(hostResolved, 80, PingCount).Result;
 
 			// 3. Retrieve statistics			// 4. Return results to user with ReplyAsync(); (Perhaps Embed ?)
 			List<long> roundTripTimings = new List<long>();
@@ -40,10 +40,10 @@ namespace Nodsoft.YumeChan.Essentials.Network
 			EmbedBuilder embedBuilder = new EmbedBuilder
 			{
 				Title = "Ping Results",
-				Description = $"Results of Ping on **{host}** " + (hostIsIP ? ":" : $"({hostResolved}) :")
+				Description = $"Results of Ping on **{host}** {(hostIsIP ? ":" : $"({hostResolved}) :")}"
 			};
 
-			for (int i = 0; i < pingCount; i++)
+			for (int i = 0; i < PingCount; i++)
 			{
 				EmbedFieldBuilder field = new EmbedFieldBuilder { Name = $"Ping {i}", IsInline = true };
 				if (pingReplies[i].Status == IPStatus.Success)
@@ -51,14 +51,17 @@ namespace Nodsoft.YumeChan.Essentials.Network
 					field.Value = $"RTD = **{pingReplies[i].RoundtripTime}** ms";
 					roundTripTimings.Add(pingReplies[i].RoundtripTime);
 				}
-				else { field.Value = $"Error : **{pingReplies[i].Status.ToString()}**"; }
+				else 
+				{
+					field.Value = $"Error : **{pingReplies[i].Status}**";
+				}
 
 				embedBuilder.AddField(field);
 			}
 
 			embedBuilder.AddField("Average RTD", (roundTripTimings.Count is 0 
 				? $"No RTD Average Assertable : No packets returned from Pings."
-				: $"Average Round-Trip Time/Delay = **{roundTripTimings.Average().ToString()}** ms / **{roundTripTimings.Count}** packets"));
+				: $"Average Round-Trip Time/Delay = **{roundTripTimings.Average()}** ms / **{roundTripTimings.Count}** packets"));
 
 			await ReplyAsync(message: contextUser, embed: embedBuilder.Build()); //Quote user in main message, and attach Embed.
 		}
@@ -88,25 +91,25 @@ namespace Nodsoft.YumeChan.Essentials.Network
 			PingModuleReply[] pingReplies = new PingModuleReply[count];
 			for (int i = 0; i < count; i++)
 			{
-				Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-				socket.Blocking = true;
+				using Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { Blocking = true };
 
 				Stopwatch latencyMeasurement = new Stopwatch();
 				IPStatus? status = null;
+				
 				try
 				{
 					latencyMeasurement.Start();
 					socket.Connect(host, port);
 					latencyMeasurement.Stop();
 				}
-				catch (Exception)
+				catch
 				{
 					status = IPStatus.TimedOut;
 				}
 
-				pingReplies[i] = new PingModuleReply(host, latencyMeasurement.ElapsedMilliseconds, status ?? IPStatus.Success );
+				pingReplies[i] = new PingModuleReply(host, latencyMeasurement.ElapsedMilliseconds, status ?? IPStatus.Success);
 			}
-			
+
 			return Task.FromResult(pingReplies);
 		}
 

@@ -4,9 +4,6 @@ namespace Nodsoft.YumeChan.Essentials.Network
 {
 	static class Utils
 	{
-		internal static bool IsIPAddress(this string address)
-		{
-			return IPAddress.TryParse(address, out _);
-		}
+		internal static bool IsIPAddress(this string address) => IPAddress.TryParse(address, out _);
 	}
 }

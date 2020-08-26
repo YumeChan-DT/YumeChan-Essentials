@@ -9,15 +9,5 @@ namespace Nodsoft.YumeChan.Essentials
 		public override string PluginDisplayName { get; } = "Yume-Chan Essentials";
 
 		public override bool PluginStealth { get; } = false;
-
-		public override async Task LoadPlugin()
-		{
-			await base.LoadPlugin();
-		}
-
-		public override async Task UnloadPlugin()
-		{
-			await base.UnloadPlugin();
-		}
 	}
 }

@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Commands;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +11,7 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 	public class PollModule : ModuleBase<SocketCommandContext>
 	{
 		public static List<Poll> DraftPolls { get; internal set; } = new List<Poll>();
-		// public static List<Poll> CurrentPolls { get; internal set; } = new List<Poll>();
+//		public static List<Poll> CurrentPolls { get; internal set; } = new List<Poll>();
 
 		public Poll SelectedPoll { get => selectedPoll ?? GetUserPollAsync().Result; protected set => selectedPoll = value; }
 		private Poll selectedPoll;
@@ -206,7 +206,7 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 		public string Name { get; set; }
 		public string Notice { get; set; }
 
-		public List<PollVoteOption> VoteOptions { get; set; } = new List<PollVoteOption>(20);
+		public List<PollVoteOption> VoteOptions { get; set; } = new(20);
 
 		public IUserMessage PublishedPollMessage { get; internal set; }
 
@@ -214,30 +214,25 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 
 		public void Reset()
 		{
-			ResetObjects(Name, Notice, VoteOptions, PublishedPollMessage);
-
-			static void ResetObjects(params object[] objects)
-			{
-				for (int i = 0; i < objects.Length; i++)
-				{
-					objects[i] = null;
-				}
-			}
+			Name = null;
+			Notice = null;
+			VoteOptions = new (20);
+			PublishedPollMessage = null;
 		}
 
 		public static async Task<bool> VoteOptionsIndexIsOutsideRange(byte index, SocketCommandContext context)
 		{
-			if (index > 20)
+			switch (index)
 			{
-				await context.Channel.SendMessageAsync($"{context.User.Mention} You have entered an index greater than 20. Please note that Discord only authorizes up to 20 reaction types per message.");
-				return true;
+				case > 20:
+					await context.Channel.SendMessageAsync($"{context.User.Mention} You have entered an index greater than 20. Please note that Discord only authorizes up to 20 reaction types per message.");
+					return true;
+
+				default:
+					return false;
 			}
-			return false;
 		}
 	}
-
-
-#pragma warning disable CA1815 // Override equals and operator equals on value types
 
 	public class PollVoteOption
 	{

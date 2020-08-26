@@ -8,8 +8,8 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 {
 	public static class Utils
 	{
-		public static Emoji GreenCheckEmoji { get; } = new Emoji("\u2705");
-		public static Emoji GreenCrossEmoji { get; } = new Emoji("\u274e");
+		public static Emoji GreenCheckEmoji { get; } = new("\u2705");
+		public static Emoji GreenCrossEmoji { get; } = new("\u274e");
 
 		public static IVoiceChannel FindUserCurrentVoiceChannel(SocketCommandContext context) => (context.User as IGuildUser)?.VoiceChannel;
 
