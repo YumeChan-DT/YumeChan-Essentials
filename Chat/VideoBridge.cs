@@ -117,17 +117,17 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 
 		internal async Task<StringBuilder> BuildUsersMentionList()
 		{
-			using var users = FindUserCurrentVoiceChannel(Context).GetUsersAsync().Flatten().GetEnumerator(); // I HATE var, but no choice here, as apparently IAsyncEnumerator is duped on 2 Libraries...
+			IAsyncEnumerable<IGuildUser> users = FindUserCurrentVoiceChannel(Context).GetUsersAsync().Flatten();
 			StringBuilder mentionList = new StringBuilder(Context.User.Mention);
 
 			if (PingAllusersInChannel)
 			{
 				mentionList.Append(", ");
-				while (await users.MoveNext())
+				await foreach (IGuildUser user in users)
 				{
-					if (users.Current.Id != Context.User.Id)
+					if (user.Id != Context.User.Id)
 					{
-						mentionList.Append(users.Current.Mention).Append(" ");
+						mentionList.Append(user.Mention).Append(" ");
 					}
 				} 
 			}
