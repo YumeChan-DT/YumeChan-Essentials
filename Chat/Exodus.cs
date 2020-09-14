@@ -12,7 +12,7 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 	[Group("exodus"), RequireBotPermission(GuildPermission.MoveMembers)]
 	public class Exodus : ModuleBase<SocketCommandContext>
 	{
-		[Command("from", RunMode = RunMode.Async), RequireOwner, RequireUserPermission(GuildPermission.MoveMembers)]
+		[Command("from", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.MoveMembers)]
 		public async Task FromChannelAsync(ulong channelId)
 		{
 			if ((Context.User as IGuildUser).VoiceChannel is IVoiceChannel dest and not null)
@@ -39,7 +39,7 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 			}
 		}
 
-		[Command("to", RunMode = RunMode.Async), RequireOwner, RequireUserPermission(GuildPermission.MoveMembers)]
+		[Command("to", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.MoveMembers)]
 		public async Task ToChannelAsync(ulong channelId)
 		{
 			if (Context.Guild.GetVoiceChannel(channelId) is IVoiceChannel dest and not null)
@@ -111,7 +111,7 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 
 			if (channel.UserLimit is not null && loadCount > channel.UserLimit - currentCount)
 			{
-				await ReplyAsync($"{Context.User.Mention} Cannot move ; Channel ``{channel.Name}`` does not have enough user slots. : \n" +
+				await ReplyAsync($"{Context.User.Mention} Cannot move ; Destination channel ``{channel.Name}`` does not have enough user slots. : \n" +
 				$"(**{loadCount}** user{(loadCount is 1 ? null : "s")} to move, **{currentCount}** user{(currentCount is 1 ? null : "s")} currently in the channel.) \n" +
 				$"Channel has a limit of **{channel.UserLimit}**, and would be over-capacity by **{loadCount + currentCount - channel.UserLimit}**.").ConfigureAwait(false);
 				
@@ -122,7 +122,7 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 		}
 
 
-		private string EmptyChannelMessage => $"{Context.User.Mention} Channel is empty, nobody's moving.";
+		private string EmptyChannelMessage => $"{Context.User.Mention} Source Channel is empty, nobody's moving.";
 		private string NotVoiceConnectedMessage => $"{Context.User.Mention} Please connect to a voice channel, then retry.";
 		private string GetInvalidChannelMessage(ulong id) => $"{Context.User.Mention} Invalid channel : ``{Context.Guild.GetVoiceChannel(id)?.Name ?? id.ToString()}``.";
 	}
