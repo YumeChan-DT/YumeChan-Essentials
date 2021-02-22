@@ -4,7 +4,6 @@ using Discord.WebSocket;
 using System.Threading.Tasks;
 
 using static Nodsoft.YumeChan.Essentials.Chat.Utils;
-using static Nodsoft.YumeChan.Essentials.Chat.VideoBridge;
 
 namespace Nodsoft.YumeChan.Essentials.Chat
 {
@@ -39,7 +38,7 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 				}
 
 				embed.AddField("Channel", CurrentChannel, true)
-					.AddField("Invite Link", $"Use this link for quick access to ``{CurrentChannel.Name}`` :\n{BuildBridgeLink(LinkTypes.Https, CurrentChannel)}");
+					.AddField("Invite Link", $"Use this link for quick access to ``{CurrentChannel.Name}`` :\n{BuildChannelLink(ChannelLinkTypes.Https, CurrentChannel)}");
 
 				await user.SendMessageAsync(embed: embed.Build());
 				await Context.User.SendMessageAsync($"Sent {user.Mention} an invite to ``{CurrentChannel.Name}`` !");

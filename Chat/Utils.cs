@@ -20,5 +20,23 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 
 		public static async Task MarkCommandAsCompleted(SocketCommandContext context) => await context.Message.AddReactionAsync(GreenCheckEmoji);
 		public static async Task MarkCommandAsFailed(SocketCommandContext context) => await context.Message.AddReactionAsync(GreenCrossEmoji);
+
+		public static string BuildChannelLink(ChannelLinkTypes type, IVoiceChannel channel)
+		{
+			string linkType = type switch
+			{
+				ChannelLinkTypes.Discord => "discord",
+				ChannelLinkTypes.Https => "https",
+				_ => throw new Exception()
+			};
+
+			return $"{linkType}://discordapp.com/channels/{channel.GuildId}/{channel.Id}";
+		}
+
+		public enum ChannelLinkTypes
+		{
+			Discord = 0,
+			Https = 1
+		}
 	}
 }
