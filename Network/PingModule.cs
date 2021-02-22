@@ -18,15 +18,14 @@ namespace Nodsoft.YumeChan.Essentials.Network
 		[Command("", RunMode = RunMode.Async)]
 		public async Task NetworkPingCommand(string host)
 		{
-			string contextUser = Context.User.Mention;
-			
+
 			// 1A. Find out if supplied Hostname or IP
 			bool hostIsIP = host.IsIPAddress();
 
 			// 1B. Resolve if necessary
 			if (!Resolve.TryResolveHostname(host, out IPAddress hostResolved, out Exception e))
 			{
-				await ReplyAsync($"{contextUser}, Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
+				await ReplyAsync($"{Context.User.Mention}, Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
 				return;
 			}
 
@@ -35,9 +34,9 @@ namespace Nodsoft.YumeChan.Essentials.Network
 			PingModuleReply[] pingReplies = TcpPing(hostResolved, 80, PingCount).Result;
 
 			// 3. Retrieve statistics			// 4. Return results to user with ReplyAsync(); (Perhaps Embed ?)
-			List<long> roundTripTimings = new List<long>();
+			List<long> roundTripTimings = new();
 
-			EmbedBuilder embedBuilder = new EmbedBuilder
+			EmbedBuilder embedBuilder = new()
 			{
 				Title = "Ping Results",
 				Description = $"Results of Ping on **{host}** {(hostIsIP ? ":" : $"({hostResolved}) :")}"
@@ -45,13 +44,13 @@ namespace Nodsoft.YumeChan.Essentials.Network
 
 			for (int i = 0; i < PingCount; i++)
 			{
-				EmbedFieldBuilder field = new EmbedFieldBuilder { Name = $"Ping {i}", IsInline = true };
-				if (pingReplies[i].Status == IPStatus.Success)
+				EmbedFieldBuilder field = new() { Name = $"Ping {i}", IsInline = true };
+				if (pingReplies[i].Status is IPStatus.Success)
 				{
-					field.Value = $"RTD = **{pingReplies[i].RoundtripTime}** ms";
-					roundTripTimings.Add(pingReplies[i].RoundtripTime);
+					field.Value = $"RTD = **{pingReplies[i].RoundTripTime}** ms";
+					roundTripTimings.Add(pingReplies[i].RoundTripTime);
 				}
-				else 
+				else
 				{
 					field.Value = $"Error : **{pingReplies[i].Status}**";
 				}
@@ -59,14 +58,14 @@ namespace Nodsoft.YumeChan.Essentials.Network
 				embedBuilder.AddField(field);
 			}
 
-			embedBuilder.AddField("Average RTD", (roundTripTimings.Count is 0 
-				? $"No RTD Average Assertable : No packets returned from Pings."
-				: $"Average Round-Trip Time/Delay = **{roundTripTimings.Average()}** ms / **{roundTripTimings.Count}** packets"));
+			embedBuilder.AddField("Average RTD", roundTripTimings.Any()
+				? $"Average Round-Trip Time/Delay = **{roundTripTimings.Average()}** ms / **{roundTripTimings.Count}** packets"
+				: $"No RTD Average Assertable : No packets returned from Pings.");
 
-			await ReplyAsync(message: contextUser, embed: embedBuilder.Build()); //Quote user in main message, and attach Embed.
+			await ReplyAsync(message: Context.User.Mention, embed: embedBuilder.Build()); //Quote user in main message, and attach Embed.
 		}
 
-		internal static async Task<PingModuleReply[]> ComplexPing(IPAddress host, int count) => await ComplexPing(host, count, 2000, new PingOptions(64, true)).ConfigureAwait(false);
+		internal static async Task<PingModuleReply[]> ComplexPing(IPAddress host, int count) => await ComplexPing(host, count, 2000, new(64, true));
 		internal static async Task<PingModuleReply[]> ComplexPing(IPAddress host, int count, int timeout, PingOptions options)
 		{
 			PingModuleReply[] pingReplies = new PingModuleReply[count];
@@ -77,7 +76,7 @@ namespace Nodsoft.YumeChan.Essentials.Network
 			// Send the request.
 			for (int i = 0; i < count; i++)
 			{
-				Ping ping = new Ping();
+				Ping ping = new();
 				pingReplies[i] = new PingModuleReply(await ping.SendPingAsync(host, timeout, buffer, options).ConfigureAwait(false));
 				ping.Dispose();
 			}
@@ -86,16 +85,16 @@ namespace Nodsoft.YumeChan.Essentials.Network
 		}
 
 		// See : https://stackoverflow.com/questions/26067342/how-to-implement-psping-tcp-ping-in-c-sharp
-		internal static Task<PingModuleReply[]> TcpPing(IPAddress host, int port, int count) 
+		internal static Task<PingModuleReply[]> TcpPing(IPAddress host, int port, int count)
 		{
 			PingModuleReply[] pingReplies = new PingModuleReply[count];
 			for (int i = 0; i < count; i++)
 			{
-				using Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { Blocking = true };
+				using Socket socket = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) { Blocking = true };
 
-				Stopwatch latencyMeasurement = new Stopwatch();
+				Stopwatch latencyMeasurement = new();
 				IPStatus? status = null;
-				
+
 				try
 				{
 					latencyMeasurement.Start();
@@ -113,24 +112,10 @@ namespace Nodsoft.YumeChan.Essentials.Network
 			return Task.FromResult(pingReplies);
 		}
 
-		internal struct PingModuleReply
-		{
-			internal IPAddress Host { get; }
-			internal long RoundtripTime { get; }
-			internal IPStatus Status { get; }
 
-			public PingModuleReply(IPAddress host, long roundtripTime, IPStatus status)
-			{
-				Host = host;
-				RoundtripTime = roundtripTime;
-				Status = status;
-			}
-			public PingModuleReply(PingReply reply)
-			{
-				Host = reply.Address;
-				RoundtripTime = reply.RoundtripTime;
-				Status = reply.Status;
-			}
+		internal record PingModuleReply(IPAddress Host, long RoundTripTime, IPStatus Status)
+		{
+			public PingModuleReply(PingReply reply) : this(reply.Address, reply.RoundtripTime, reply.Status) { }
 		}
 	}
 }
