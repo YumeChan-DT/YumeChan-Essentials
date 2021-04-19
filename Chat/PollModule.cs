@@ -1,5 +1,6 @@
-using Discord;
-using Discord.Commands;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,192 +9,202 @@ using System.Threading.Tasks;
 namespace Nodsoft.YumeChan.Essentials.Chat
 {
 	[Group("poll")]
-	public class PollModule : ModuleBase<SocketCommandContext>
+	public class PollModule : BaseCommandModule
 	{
-		public static List<Poll> DraftPolls { get; internal set; } = new List<Poll>();
-//		public static List<Poll> CurrentPolls { get; internal set; } = new List<Poll>();
-
-		public Poll SelectedPoll { get => selectedPoll ?? GetUserPollAsync().Result; protected set => selectedPoll = value; }
-		private Poll selectedPoll;
+		public List<Poll> DraftPolls { get; internal set; } = new List<Poll>();
+//		public List<Poll> CurrentPolls { get; internal set; } = new List<Poll>();
 
 
 		[Command("init")]
-		public async Task InitPollAsync()
+		public async Task InitPollAsync(CommandContext context)
 		{
-			Poll poll = QueryUserPoll(Context.User, DraftPolls);
+			DiscordMessage reply;
 
-			if (poll is null)
+			if (QueryUserPoll(context.User, DraftPolls) is Poll poll)
 			{
-				IUserMessage reply = await ReplyAsync("Creating a new Poll...");
-				DraftPolls.Add(new Poll(Context.User));
-				await reply.ModifyAsync(msg => msg.Content += " Done !");
+				reply = await context.RespondAsync("Resetting existing Poll...");
+				DraftPolls.Find(x => x == poll).Reset();
 			}
 			else
 			{
-				IUserMessage reply = await ReplyAsync("Resetting existing Poll...");
-				DraftPolls.Find(x => x == poll).Reset();
-				await reply.ModifyAsync(msg => msg.Content += " Done !");
+				reply = await context.RespondAsync("Creating a new Poll...");
+				DraftPolls.Add(new(context.User));
 			}
+
+			await reply.ModifyAsync(msg => msg.Content += " Done !");
 		}
 
 		[Command("name")]
-		public async Task SetPollNameAsync([Remainder]string name)
+		public async Task SetPollNameAsync(CommandContext context, [RemainingText] string name)
 		{
-			if (SelectedPoll is null) return;
-
-			SelectedPoll.Name = name;
-			await Utils.MarkCommandAsCompleted(Context);
+			if (await GetUserPollAsync(context) is Poll poll)
+			{
+				poll.Name = name;
+				await Utilities.MarkCommandAsCompleted(context);
+			}
 		}
 		[Command("notice")]
-		public async Task SetPollNoticeAsync([Remainder]string notice)
+		public async Task SetPollNoticeAsync(CommandContext context, [RemainingText] string notice)
 		{
-			if (SelectedPoll is null) return;
-
-			SelectedPoll.Notice = notice;
-			await Utils.MarkCommandAsCompleted(Context);
+			if (await GetUserPollAsync(context) is Poll poll)
+			{
+				poll.Notice = notice;
+				await Utilities.MarkCommandAsCompleted(context);
+			}
 		}
 
 		[Command("addoption")]
-		public async Task AddPollOptionAsync(IEmote reactionEmote, [Remainder]string description)
+		public async Task AddPollOptionAsync(CommandContext context, DiscordEmoji reactionEmote, [RemainingText] string description)
 		{
-			if (SelectedPoll is null) return;
-
-			SelectedPoll.VoteOptions.Add(new PollVoteOption { ReactionEmote = reactionEmote, Description = description });
-			await Utils.MarkCommandAsCompleted(Context);
+			if (await GetUserPollAsync(context) is Poll poll)
+			{
+				poll.VoteOptions.Add(new PollVoteOption { ReactionEmote = reactionEmote, Description = description });
+				await Utilities.MarkCommandAsCompleted(context);
+			}
 		}
-		//[Command("setoption"), Priority(1)]
-		public async Task SetPollOptionAsync(byte index, IEmote reactionEmote, [Remainder]string description)
-		{
-			if (SelectedPoll is null) return;
-			if (await Poll.VoteOptionsIndexIsOutsideRange(index, Context)) return;
 
-			SelectedPoll.VoteOptions[index] = new PollVoteOption { ReactionEmote = reactionEmote, Description = description };
-			await Utils.MarkCommandAsCompleted(Context);
+		//[Command("setoption"), Priority(1)]
+		public async Task SetPollOptionAsync(CommandContext context, byte index, DiscordEmoji reactionEmote, [RemainingText] string description)
+		{
+			if (await GetUserPollAsync(context) is Poll poll && !await Poll.VoteOptionsIndexIsOutsideRange(index, context))
+			{
+				poll.VoteOptions[index] = new PollVoteOption { ReactionEmote = reactionEmote, Description = description };
+				await Utilities.MarkCommandAsCompleted(context);
+			}
 		}
 		//[Command("setoption")]
-		public async Task SetPollOptionAsync(IEmote reactionEmote, [Remainder]string description)
+		public async Task SetPollOptionAsync(CommandContext context, DiscordEmoji reactionEmote, [RemainingText] string description)
 		{
-			if (SelectedPoll is null) return;
-
-			SelectedPoll.VoteOptions.Find(x => x.ReactionEmote == reactionEmote).Description = description; 
-
-			await Utils.MarkCommandAsCompleted(Context);
+			if (await GetUserPollAsync(context) is Poll poll)
+			{
+				poll.VoteOptions.Find(x => x.ReactionEmote == reactionEmote).Description = description;
+				await Utilities.MarkCommandAsCompleted(context);
+			}
 		}
 		[Command("removeoption"), Priority(1)]
-		public async Task RemovePollOptionAsync(byte index)
+		public async Task RemovePollOptionAsync(CommandContext context, byte index)
 		{
-			if (SelectedPoll is null) return;
-			if (await Poll.VoteOptionsIndexIsOutsideRange(index, Context)) return;
-
-			SelectedPoll.VoteOptions.RemoveAt(index);
-			await Utils.MarkCommandAsCompleted(Context);
+			if (await GetUserPollAsync(context) is Poll poll && !await Poll.VoteOptionsIndexIsOutsideRange(index, context))
+			{
+				poll.VoteOptions.RemoveAt(index);
+				await Utilities.MarkCommandAsCompleted(context);
+			}
 		}
 		[Command("removeoption")]
-		public async Task RemovePollOptionAsync(IEmote emote)
+		public async Task RemovePollOptionAsync(CommandContext context, DiscordEmoji emote)
 		{
-			if (SelectedPoll is null) return;
-
-			try
+			if (await GetUserPollAsync(context) is Poll poll)
 			{
-				SelectedPoll.VoteOptions.Remove(SelectedPoll.VoteOptions.First(option => option.ReactionEmote == emote));
-				await Utils.MarkCommandAsCompleted(Context);
-			}
-			catch (System.InvalidOperationException)
-			{
-				await Utils.MarkCommandAsFailed(Context);
+				try
+				{
+					poll.VoteOptions.Remove(poll.VoteOptions.First(option => option.ReactionEmote == emote));
+					await Utilities.MarkCommandAsCompleted(context);
+				}
+				catch (System.InvalidOperationException)
+				{
+					await Utilities.MarkCommandAsFailed(context);
+				}
 			}
 		}
 		[Command("clearoptions")]
-		public async Task ClearPollOptionsAsync()
+		public async Task ClearPollOptionsAsync(CommandContext context)
 		{
-			if (SelectedPoll is null) return;
-
-			SelectedPoll.VoteOptions.Clear();
-
-			await Utils.MarkCommandAsCompleted(Context);
+			if (await GetUserPollAsync(context) is Poll poll)
+			{
+				poll.VoteOptions.Clear();
+				await Utilities.MarkCommandAsCompleted(context);
+			}
 		}
 
 		[Command("previewoptions")]
-		public async Task PreviewOptionsAsync()
+		public async Task PreviewOptionsAsync(CommandContext context)
 		{
-			if (SelectedPoll is null) return;
-
-			if (SelectedPoll.VoteOptions.Count == 0)
+			if (await GetUserPollAsync(context) is Poll poll)
 			{
-				await ReplyAsync($"{Context.User.Mention} **No Vote Options registered.** Be sure to add some before attempting to Preview !");
-			}
-			else
-			{
-				StringBuilder previewBuilder = new StringBuilder(Context.User.Mention).Append($" Previewing Vote Options on **{SelectedPoll.Name ?? "Unnamed Poll"}** :\n\n");
-				byte index = 0;
-
-				foreach (PollVoteOption option in SelectedPoll.VoteOptions)
+				if (poll.VoteOptions.Count is 0)
 				{
-					index++;
-					previewBuilder.AppendLine($"**{index} :** {option.ReactionEmote} - {option.Description}");
+					await context.RespondAsync($"**No Vote Options registered.** Be sure to add some before attempting to Preview.");
 				}
+				else
+				{
+					StringBuilder previewBuilder = new($" Previewing Vote Options on **{poll.Name ?? "Unnamed Poll"}** :\n\n");
+					byte index = 0;
 
-				await ReplyAsync(previewBuilder.ToString());
+					foreach (PollVoteOption option in poll.VoteOptions)
+					{
+						index++;
+						previewBuilder.AppendLine($"**{index} :** {option.ReactionEmote} - {option.Description}");
+					}
+
+					await context.RespondAsync(previewBuilder.ToString());
+				}
 			}
 		}
 
 		[Command("previewpoll")]
-		public async Task PreviewPollAsync()
+		public async Task PreviewPollAsync(CommandContext context)
 		{
-			if (SelectedPoll is null) return;
-
-			IUserMessage message = await Context.User.GetOrCreateDMChannelAsync().Result.SendMessageAsync(embed: BuildPollMessage().Result.Build());
-			await AddPollReactionsAsync(SelectedPoll, message);
-		}
-		[Command("publish")]
-		public async Task PublishPollAsync()
-		{
-			if (SelectedPoll is null) return;
-
-			SelectedPoll.PublishedPollMessage = await ReplyAsync(embed: BuildPollMessage().Result.Build());
-			await AddPollReactionsAsync(SelectedPoll, SelectedPoll.PublishedPollMessage);
-
-			await Context.User.GetOrCreateDMChannelAsync().Result.SendMessageAsync(
-				$"Published Poll ``{SelectedPoll.Name}`` in channel ``{SelectedPoll.PublishedPollMessage.Channel.Name}``.");
-
-			await Context.Message.DeleteAsync();
-
-			// CurrentPolls.Add(SelectedPoll);
-			DraftPolls.Remove(SelectedPoll);
-		}
-
-		public static Poll QueryUserPoll(IUser user, List<Poll> list) => list.FirstOrDefault(poll => poll.Author.Id == user.Id);
-
-		protected Task<EmbedBuilder> BuildPollMessage()
-		{
-			EmbedBuilder embed = new EmbedBuilder { Title = "**Poll**", Description = SelectedPoll.Name ?? "No Description." }
-				.WithAuthor(SelectedPoll.Author);
-
-			if (!string.IsNullOrWhiteSpace(SelectedPoll.Notice))
+			if (await GetUserPollAsync(context) is Poll poll)
 			{
-				embed.WithFooter(SelectedPoll.Notice);
+				DiscordMessage message = await context.RespondAsync(BuildPollMessage(poll));
+				await AddPollReactionsAsync(poll, message);
+			}
+		}
+		[Command("publish"), RequireGuild]
+		public async Task PublishPollAsync(CommandContext context)
+		{
+			if (await GetUserPollAsync(context) is Poll poll)
+			{
+				poll.PublishedPollMessage = await context.Channel.SendMessageAsync(BuildPollMessage(poll));
+				await AddPollReactionsAsync(poll, poll.PublishedPollMessage);
+				await context.Member.SendMessageAsync($"Published Poll ``{poll.Name}`` in channel ``{poll.PublishedPollMessage.Channel.Name}``.");
+				await context.Message.DeleteAsync();
+
+				// CurrentPolls.Add(poll);
+				DraftPolls.Remove(poll);
+			}
+		}
+
+		public static Poll QueryUserPoll(DiscordUser user, List<Poll> list) => list.FirstOrDefault(poll => poll.Author.Id == user.Id);
+
+		protected static DiscordEmbed BuildPollMessage(Poll poll)
+		{
+			DiscordEmbedBuilder embed = new()
+			{
+				Title = "**Poll**",
+				Description = poll.Name ?? "No Description.",
+			};
+
+			embed.WithAuthor(poll.Author);
+
+			if (!string.IsNullOrWhiteSpace(poll.Notice))
+			{
+				embed.WithFooter(poll.Notice);
 			}
 
-			foreach (PollVoteOption option in SelectedPoll.VoteOptions)
+			foreach (PollVoteOption option in poll.VoteOptions)
 			{
 				embed.AddField(option.Description, option.ReactionEmote, true);
 			}
 
-			return Task.FromResult(embed);
+			return embed.Build();
 		}
 
-		protected static async Task AddPollReactionsAsync(Poll poll, IUserMessage message)
+		protected static async Task AddPollReactionsAsync(Poll poll, DiscordMessage message)
 		{
-			await message.AddReactionsAsync(poll.VoteOptions.Select(x => x.ReactionEmote).ToArray());
+			foreach (DiscordEmoji emoji in poll.VoteOptions.Select(x => x.ReactionEmote))
+			{
+				await poll.PublishedPollMessage.CreateReactionAsync(emoji);
+			}
 		}
 
-		private async Task<Poll> GetUserPollAsync()
+		private async Task<Poll> GetUserPollAsync(CommandContext context)
 		{
-			Poll poll = QueryUserPoll(Context.User, DraftPolls);
+			Poll poll = QueryUserPoll(context.User, DraftPolls);
 
 			if (poll is null)
 			{
-				await ReplyAsync("Cannot perform action, no Poll was found.\nYou may initialize a Poll by typing ``==poll init``.");
+				await context.RespondAsync("Cannot perform action, no Poll was found.\nYou may initialize a Poll by typing ``==poll init``.");
 			}
 			return poll;
 		}
@@ -201,26 +212,26 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 
 	public class Poll
 	{
-		public IUser Author { get; private set; }
+		public DiscordUser Author { get; private set; }
 
 		public string Name { get; set; }
 		public string Notice { get; set; }
 
 		public List<PollVoteOption> VoteOptions { get; set; } = new(20);
 
-		public IUserMessage PublishedPollMessage { get; internal set; }
+		public DiscordMessage PublishedPollMessage { get; internal set; }
 
-		public Poll(IUser author) => Author = author;
+		public Poll(DiscordUser author) => Author = author;
 
 		public void Reset()
 		{
 			Name = null;
 			Notice = null;
-			VoteOptions = new (20);
+			VoteOptions = new(20);
 			PublishedPollMessage = null;
 		}
 
-		public static async Task<bool> VoteOptionsIndexIsOutsideRange(byte index, SocketCommandContext context)
+		public static async Task<bool> VoteOptionsIndexIsOutsideRange(byte index, CommandContext context)
 		{
 			switch (index)
 			{
@@ -236,7 +247,7 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 
 	public class PollVoteOption
 	{
-		public IEmote ReactionEmote { get; set; }
+		public DiscordEmoji ReactionEmote { get; set; }
 
 		public string Description { get; set; }
 

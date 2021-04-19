@@ -1,34 +1,34 @@
-﻿using Discord.Commands;
+﻿using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
 using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
+#pragma warning disable CA1822
+
 namespace Nodsoft.YumeChan.Essentials.Network
 {
-	[Group("resolve")]
-	public class Resolve : ModuleBase<SocketCommandContext>
+	public class Resolve : BaseCommandModule
 	{
-		[Command]
-		public async Task ResolveCommand(string host)
+		[Command("resolve")]
+		public async Task ResolveCommand(CommandContext context, string host)
 		{
-			string contextUser = Context.User.Mention;
-
 			if (host.IsIPAddress())
 			{
-				await ReplyAsync($"{contextUser}, Isn't ``{host}`` already an IP address ?");
+				await context.RespondAsync($"Isn't ``{host}`` already an IP address ?");
 			}
 			else
 			{
-					await ReplyAsync(TryResolveHostname(host, out string hostResolved, out Exception e) 
-						? $"{contextUser}, Hostname ``{host}`` resolves to IP Address ``{hostResolved}``."
-						: $"{contextUser}, Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
+				await context.RespondAsync(TryResolveHostname(host, out string hostResolved, out Exception e) 
+					? $"Hostname ``{host}`` resolves to IP Address ``{hostResolved}``."
+					: $"Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
 			}
 		}
 
 		public static async Task<IPAddress> ResolveHostnameAsync(string hostname)
 		{
-			IPAddress[] a = await Dns.GetHostAddressesAsync(hostname).ConfigureAwait(false);
+			IPAddress[] a = await Dns.GetHostAddressesAsync(hostname);
 			return a.FirstOrDefault();
 		}
 
@@ -41,6 +41,7 @@ namespace Nodsoft.YumeChan.Essentials.Network
 		public static bool TryResolveHostname(string hostname, out IPAddress resolved, out Exception exception)
 		{
 			IPAddress[] a;
+
 			try
 			{
 				a = Dns.GetHostAddresses(hostname);

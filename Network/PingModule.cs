@@ -1,5 +1,6 @@
-﻿using Discord;
-using Discord.Commands;
+﻿using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,13 +11,14 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
+#pragma warning disable CA1822
+
 namespace Nodsoft.YumeChan.Essentials.Network
 {
-	[Group("ping")]
-	public class PingModule : ModuleBase<SocketCommandContext>
+	public class PingModule : BaseCommandModule
 	{
-		[Command("", RunMode = RunMode.Async)]
-		public async Task NetworkPingCommand(string host)
+		[Command("ping")]
+		public async Task NetworkPingCommand(CommandContext context, string host)
 		{
 
 			// 1A. Find out if supplied Hostname or IP
@@ -25,7 +27,7 @@ namespace Nodsoft.YumeChan.Essentials.Network
 			// 1B. Resolve if necessary
 			if (!Resolve.TryResolveHostname(host, out IPAddress hostResolved, out Exception e))
 			{
-				await ReplyAsync($"{Context.User.Mention}, Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
+				await context.RespondAsync($"Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
 				return;
 			}
 
@@ -36,7 +38,7 @@ namespace Nodsoft.YumeChan.Essentials.Network
 			// 3. Retrieve statistics			// 4. Return results to user with ReplyAsync(); (Perhaps Embed ?)
 			List<long> roundTripTimings = new();
 
-			EmbedBuilder embedBuilder = new()
+			DiscordEmbedBuilder embedBuilder = new()
 			{
 				Title = "Ping Results",
 				Description = $"Results of Ping on **{host}** {(hostIsIP ? ":" : $"({hostResolved}) :")}"
@@ -44,25 +46,25 @@ namespace Nodsoft.YumeChan.Essentials.Network
 
 			for (int i = 0; i < PingCount; i++)
 			{
-				EmbedFieldBuilder field = new() { Name = $"Ping {i}", IsInline = true };
+				string embedValue;
 				if (pingReplies[i].Status is IPStatus.Success)
 				{
-					field.Value = $"RTD = **{pingReplies[i].RoundTripTime}** ms";
+					embedValue = $"RTD = **{pingReplies[i].RoundTripTime}** ms";
 					roundTripTimings.Add(pingReplies[i].RoundTripTime);
 				}
 				else
 				{
-					field.Value = $"Error : **{pingReplies[i].Status}**";
+					embedValue = $"Error : **{pingReplies[i].Status}**";
 				}
 
-				embedBuilder.AddField(field);
+				embedBuilder.AddField($"Ping {i}", embedValue, true);
 			}
 
 			embedBuilder.AddField("Average RTD", roundTripTimings.Any()
 				? $"Average Round-Trip Time/Delay = **{roundTripTimings.Average()}** ms / **{roundTripTimings.Count}** packets"
-				: $"No RTD Average Assertable : No packets returned from Pings.");
+				: "No RTD Average Assertable : No packets returned from Pings.");
 
-			await ReplyAsync(message: Context.User.Mention, embed: embedBuilder.Build()); //Quote user in main message, and attach Embed.
+			await context.RespondAsync(embedBuilder.Build());
 		}
 
 		internal static async Task<PingModuleReply[]> ComplexPing(IPAddress host, int count) => await ComplexPing(host, count, 2000, new(64, true));

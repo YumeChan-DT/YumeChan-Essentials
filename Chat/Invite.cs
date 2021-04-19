@@ -1,47 +1,46 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
+﻿using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 using System.Threading.Tasks;
+using static Nodsoft.YumeChan.Essentials.Utilities;
 
-using static Nodsoft.YumeChan.Essentials.Chat.Utils;
+#pragma warning disable CA1822
 
 namespace Nodsoft.YumeChan.Essentials.Chat
 {
-	public class Invite : ModuleBase<SocketCommandContext>
+	public class Invite : BaseCommandModule
 	{
-		IVoiceChannel CurrentChannel { get; set; }
-
-		[Command("invite"), Alias("inv")]
-		public async Task InviteCommandAsync(SocketGuildUser user)
+		[Command("invite"), Aliases("inv")]
+		public async Task InviteCommandAsync(CommandContext context, DiscordMember member)
 		{
-			CurrentChannel = FindUserCurrentVoiceChannel(Context);
+			DiscordChannel currentChannel = context.Member.VoiceState.Channel;
 
-			if (user is null)
+			if (member is null)
 			{
-				await ReplyAsync($"{Context.User.Mention} Please quote an existing User, or enter a valid username.");
+				await context.RespondAsync("Please quote an existing User, or enter a valid username.");
 			}
-			else if (CurrentChannel is null)
+			else if (currentChannel is null)
 			{
-				await ReplyAsync($"{Context.User.Mention} Please connect to a Voice Channel before inviting another user.");
+				await context.RespondAsync("Please connect to a Voice Channel before inviting another user.");
 			}
 			else
 			{
-				EmbedBuilder embed = new EmbedBuilder()
-					.WithAuthor(Context.User)
+				DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
+					.WithAuthor(context.User)
 					.WithTitle("Invitation to Voice Channel")
-					.WithDescription($"You have been invited by {Context.User.Mention} to join a voice channel.")
-					.AddField("Server", Context.Guild, true);
+					.WithDescription($"You have been invited by {context.User.Mention} to join a voice channel.")
+					.AddField("Server", context.Guild.Name, true);
 
-				if (CurrentChannel.CategoryId != null)
+				if (currentChannel.Parent is DiscordChannel category and not null)
 				{
-					embed.AddField("Category", Context.Guild.GetCategoryChannel((ulong)CurrentChannel.CategoryId).Name, true); 
+					embed.AddField("Category", category.Name, true); 
 				}
 
-				embed.AddField("Channel", CurrentChannel, true)
-					.AddField("Invite Link", $"Use this link for quick access to ``{CurrentChannel.Name}`` :\n{BuildChannelLink(ChannelLinkTypes.Https, CurrentChannel)}");
+				embed.AddField("Channel", currentChannel.Name, true)
+					.AddField("Invite Link", $"Use this link for quick access to ``{currentChannel.Name}`` :\n{BuildChannelLink(ChannelLinkTypes.Https, currentChannel)}");
 
-				await user.SendMessageAsync(embed: embed.Build());
-				await Context.User.SendMessageAsync($"Sent {user.Mention} an invite to ``{CurrentChannel.Name}`` !");
+				await member.SendMessageAsync(embed: embed.Build());
+				await context.Member.SendMessageAsync($"Sent {member.Mention} an invite to ``{currentChannel.Name}``.");
 			}
 		}
 	}
