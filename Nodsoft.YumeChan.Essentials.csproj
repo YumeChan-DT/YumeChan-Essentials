@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Version>0.3.4</Version>
+		<TargetFramework>net5.0</TargetFramework>
+		<Authors>Sakura Isayeki</Authors>
+		<Company>Nodsoft Systems</Company>
+		<Product>YumeChan Essentials</Product>
+		<Copyright>GNU LGPLv3</Copyright>
+		<NeutralLanguage>en</NeutralLanguage>
+		<PackageProjectUrl />
+		<RepositoryUrl>https://github.com/YumeChan-DT/YumeChan-Essentials</RepositoryUrl>
+		<RepositoryType>Git</RepositoryType>
+		<Platforms>AnyCPU</Platforms>
+		<AssemblyVersion>0.3.4.0</AssemblyVersion>
+		<FileVersion>0.3.4.0</FileVersion>
+		<OutDir>$(SolutionDir)build\Plugins</OutDir>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Remove=".git" />
+		<None Remove=".gitignore" />
+		<None Remove="LICENSE" />
+		<None Remove="README.md" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<PackageReference Include="Discord.Net" Version="2.3.0" />
+		<PackageReference Include="Discord.Net.Commands" Version="2.3.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+		<PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\Nodsoft.YumeChan.PluginBase\Nodsoft.YumeChan.PluginBase.csproj" />
+	</ItemGroup>
+
+</Project>
