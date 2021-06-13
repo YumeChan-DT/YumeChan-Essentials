@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<Version>2.0.0-dev</Version>
+		<Version>2.0.1</Version>
 		<TargetFramework>net5.0</TargetFramework>
 		<Authors>Sakura Akeno Isayeki</Authors>
 		<Company>Nodsoft Systems</Company>
