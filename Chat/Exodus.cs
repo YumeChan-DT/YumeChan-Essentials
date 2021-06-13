@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 #pragma warning disable CA1822
 
 
-namespace Nodsoft.YumeChan.Essentials.Chat
+namespace YumeChan.Essentials.Chat
 {
 	[Group("exodus"), RequireGuild, RequireBotPermissions(Permissions.MoveMembers)]
 	public class Exodus : BaseCommandModule

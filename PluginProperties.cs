@@ -1,10 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nodsoft.YumeChan.PluginBase;
+using YumeChan.PluginBase;
 using System;
 using System.Threading.Tasks;
 
-namespace Nodsoft.YumeChan.Essentials
+namespace YumeChan.Essentials
 {
 	public class PluginProperties : Plugin
 	{

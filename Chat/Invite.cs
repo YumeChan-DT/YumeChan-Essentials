@@ -2,11 +2,11 @@
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using System.Threading.Tasks;
-using static Nodsoft.YumeChan.Essentials.Utilities;
+using static YumeChan.Essentials.Utilities;
 
 #pragma warning disable CA1822
 
-namespace Nodsoft.YumeChan.Essentials.Chat
+namespace YumeChan.Essentials.Chat
 {
 	public class Invite : BaseCommandModule
 	{

@@ -22,8 +22,8 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<PackageReference Include="DSharpPlus" Version="4.0.0" />
-		<PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0" />
+		<PackageReference Include="DSharpPlus" Version="4.0.1" />
+		<PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
 		<PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3">
 			<PrivateAssets>all</PrivateAssets>
@@ -32,7 +32,7 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<ProjectReference Include="..\Nodsoft.YumeChan.PluginBase\Nodsoft.YumeChan.PluginBase.csproj" />
+		<ProjectReference Include="..\YumeChan.PluginBase\YumeChan.PluginBase.csproj" />
 	</ItemGroup>
 
 </Project>

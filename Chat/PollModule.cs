@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nodsoft.YumeChan.Essentials.Chat
+namespace YumeChan.Essentials.Chat
 {
 	[Group("poll")]
 	public class PollModule : BaseCommandModule

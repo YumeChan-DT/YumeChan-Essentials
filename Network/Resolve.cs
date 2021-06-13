@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 #pragma warning disable CA1822
 
-namespace Nodsoft.YumeChan.Essentials.Network
+namespace YumeChan.Essentials.Network
 {
 	public class Resolve : BaseCommandModule
 	{

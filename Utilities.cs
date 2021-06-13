@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Nodsoft.YumeChan.Essentials
+namespace YumeChan.Essentials
 {
 	public static class Utilities
 	{
