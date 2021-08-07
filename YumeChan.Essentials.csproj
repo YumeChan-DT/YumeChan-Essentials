@@ -22,16 +22,6 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<PackageReference Include="DSharpPlus" Version="4.0.1" />
-		<PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.1" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-		<PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
-	
-	<ItemGroup>
 		<ProjectReference Include="..\YumeChan.PluginBase\YumeChan.PluginBase.csproj" />
 	</ItemGroup>
 
