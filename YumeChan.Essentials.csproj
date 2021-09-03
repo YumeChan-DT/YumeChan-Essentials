@@ -21,6 +21,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="IDoEverything.DSharpPlus.SlashCommands" Version="2.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\YumeChan.PluginBase\YumeChan.PluginBase.csproj" />
 	</ItemGroup>
 

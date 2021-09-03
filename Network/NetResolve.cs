@@ -1,5 +1,7 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.SlashCommands;
 using System;
 using System.Linq;
 using System.Net;
@@ -9,20 +11,26 @@ using System.Threading.Tasks;
 
 namespace YumeChan.Essentials.Network
 {
-	public class Resolve : BaseCommandModule
+	public partial class NetworkTopModule
 	{
-		[Command("resolve")]
-		public async Task ResolveCommand(CommandContext context, string host)
+		[SlashCommand("resolve", "Resolves the IP address behind a given domain name.")]
+		public async Task ResolveCommand(InteractionContext context,
+			[Option("Host", "Host to attempt resolution on.")] string host)
 		{
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
 			if (host.IsIPAddress())
 			{
-				await context.RespondAsync($"Isn't ``{host}`` already an IP address ?");
+				await context.FollowUpAsync(new() { Content = $"Isn't ``{host}`` already an IP address ?" });
 			}
 			else
 			{
-				await context.RespondAsync(TryResolveHostname(host, out string hostResolved, out Exception e) 
-					? $"Hostname ``{host}`` resolves to IP Address ``{hostResolved}``."
-					: $"Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
+				await context.FollowUpAsync(new()
+				{
+					Content = TryResolveHostname(host, out string hostResolved, out Exception e)
+						? $"Hostname ``{host}`` resolves to IP Address ``{hostResolved}``."
+						: $"Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}"
+				});
 			}
 		}
 

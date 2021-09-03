@@ -1,6 +1,7 @@
-﻿using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
+﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 using System.Threading.Tasks;
 using static YumeChan.Essentials.Utilities;
 
@@ -8,22 +9,14 @@ using static YumeChan.Essentials.Utilities;
 
 namespace YumeChan.Essentials.Chat
 {
-	public class Invite : BaseCommandModule
+	public class Invite : ApplicationCommandModule
 	{
-		[Command("invite"), Aliases("inv")]
-		public async Task InviteCommandAsync(CommandContext context, DiscordMember member)
+		[ContextMenu(ApplicationCommandType.UserContextMenu, "Invite")]
+		public async Task InviteCommandAsync(ContextMenuContext context)
 		{
-			DiscordChannel currentChannel = context.Member.VoiceState.Channel;
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new() { IsEphemeral = true });
 
-			if (member is null)
-			{
-				await context.RespondAsync("Please quote an existing User, or enter a valid username.");
-			}
-			else if (currentChannel is null)
-			{
-				await context.RespondAsync("Please connect to a Voice Channel before inviting another user.");
-			}
-			else
+			if (context.Member.VoiceState?.Channel is DiscordChannel currentChannel)
 			{
 				DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
 					.WithAuthor(context.User)
@@ -31,16 +24,28 @@ namespace YumeChan.Essentials.Chat
 					.WithDescription($"You have been invited by {context.User.Mention} to join a voice channel.")
 					.AddField("Server", context.Guild.Name, true);
 
-				if (currentChannel.Parent is DiscordChannel category and not null)
+				if (currentChannel.Parent is DiscordChannel category)
 				{
-					embed.AddField("Category", category.Name, true); 
+					embed.AddField("Category", category.Name, true);
 				}
 
-				embed.AddField("Channel", currentChannel.Name, true)
-					.AddField("Invite Link", $"Use this link for quick access to ``{currentChannel.Name}`` :\n{BuildChannelLink(ChannelLinkTypes.Https, currentChannel)}");
+				embed.AddField("Channel", currentChannel.Mention, true);
 
-				await member.SendMessageAsync(embed: embed.Build());
-				await context.Member.SendMessageAsync($"Sent {member.Mention} an invite to ``{currentChannel.Name}``.");
+				await context.TargetMember.SendMessageAsync(embed: embed.Build());
+
+				await context.FollowUpAsync(new()
+				{
+					Content = $"Sent {context.TargetMember.Mention} an invite to {currentChannel.Mention}.",
+					IsEphemeral = true
+				});
+			}
+			else
+			{
+				await context.FollowUpAsync(new()
+				{
+					Content = "Please connect to a Voice Channel before inviting another user.",
+					IsEphemeral = true
+				});
 			}
 		}
 	}

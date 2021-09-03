@@ -1,6 +1,8 @@
-﻿using DSharpPlus.CommandsNext;
+﻿using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,25 +17,27 @@ using System.Threading.Tasks;
 
 namespace YumeChan.Essentials.Network
 {
-	public class PingModule : BaseCommandModule
+	public partial class NetworkTopModule
 	{
-		[Command("ping")]
-		public async Task NetworkPingCommand(CommandContext context, string host)
+		[SlashCommand("ping", "Attemps to ping a specified Host.")]
+		public async Task NetworkPingCommand(InteractionContext context,
+			[Option("Host", "IP Address / Domain name to ping")] string host)
 		{
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
 
 			// 1A. Find out if supplied Hostname or IP
 			bool hostIsIP = host.IsIPAddress();
 
 			// 1B. Resolve if necessary
-			if (!Resolve.TryResolveHostname(host, out IPAddress hostResolved, out Exception e))
+			if (!TryResolveHostname(host, out IPAddress hostResolved, out Exception e))
 			{
-				await context.RespondAsync($"Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
+				await context.FollowUpAsync(new() { Content = $"Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}" });
 				return;
 			}
 
 			// 2. Ping the IP
 			const int PingCount = 4;
-			PingModuleReply[] pingReplies = TcpPing(hostResolved, 80, PingCount).Result;
+			PingModuleReply[] pingReplies = await ComplexPingAsync(hostResolved, PingCount);
 
 			// 3. Retrieve statistics			// 4. Return results to user with ReplyAsync(); (Perhaps Embed ?)
 			List<long> roundTripTimings = new();
@@ -47,6 +51,7 @@ namespace YumeChan.Essentials.Network
 			for (int i = 0; i < PingCount; i++)
 			{
 				string embedValue;
+
 				if (pingReplies[i].Status is IPStatus.Success)
 				{
 					embedValue = $"RTD = **{pingReplies[i].RoundTripTime}** ms";
@@ -64,11 +69,11 @@ namespace YumeChan.Essentials.Network
 				? $"Average Round-Trip Time/Delay = **{roundTripTimings.Average()}** ms / **{roundTripTimings.Count}** packets"
 				: "No RTD Average Assertable : No packets returned from Pings.");
 
-			await context.RespondAsync(embedBuilder.Build());
+			await context.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedBuilder.Build()));
 		}
 
-		internal static async Task<PingModuleReply[]> ComplexPing(IPAddress host, int count) => await ComplexPing(host, count, 2000, new(64, true));
-		internal static async Task<PingModuleReply[]> ComplexPing(IPAddress host, int count, int timeout, PingOptions options)
+		internal static async Task<PingModuleReply[]> ComplexPingAsync(IPAddress host, int count) => await ComplexPingAsync(host, count, 2000, new(64, true));
+		internal static async Task<PingModuleReply[]> ComplexPingAsync(IPAddress host, int count, int timeout, PingOptions options)
 		{
 			PingModuleReply[] pingReplies = new PingModuleReply[count];
 
@@ -79,7 +84,7 @@ namespace YumeChan.Essentials.Network
 			for (int i = 0; i < count; i++)
 			{
 				Ping ping = new();
-				pingReplies[i] = new PingModuleReply(await ping.SendPingAsync(host, timeout, buffer, options).ConfigureAwait(false));
+				pingReplies[i] = new PingModuleReply(await ping.SendPingAsync(host, timeout, buffer, options));
 				ping.Dispose();
 			}
 
@@ -87,7 +92,7 @@ namespace YumeChan.Essentials.Network
 		}
 
 		// See : https://stackoverflow.com/questions/26067342/how-to-implement-psping-tcp-ping-in-c-sharp
-		internal static Task<PingModuleReply[]> TcpPing(IPAddress host, int port, int count)
+		internal static Task<PingModuleReply[]> TcpPingAsync(IPAddress host, int port, int count)
 		{
 			PingModuleReply[] pingReplies = new PingModuleReply[count];
 			for (int i = 0; i < count; i++)
