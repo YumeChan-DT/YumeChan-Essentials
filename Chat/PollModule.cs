@@ -28,11 +28,11 @@ namespace YumeChan.Essentials.Chat
 			if (GetUserPoll(context.User, DraftPolls) is Poll poll)
 			{
 				DraftPolls.Find(x => x == poll).Reset();
-				await context.FollowUpAsync(new() { Content = "Resetted existing Poll." });
+				await context.FollowUpAsync("Resetted existing Poll.", true);
 			}
 			else
 			{
-				await context.FollowUpAsync(new() { Content = "Created new Poll." });
+				await context.FollowUpAsync("Created new Poll.", true);
 				DraftPolls.Add(new(context.User));
 			}
 		}
@@ -135,7 +135,7 @@ namespace YumeChan.Essentials.Chat
 			{
 				if (poll.VoteOptions.Count is 0)
 				{
-					await context.FollowUpAsync(new() { Content = $"**No Vote Options registered.** Be sure to add some before attempting to Preview." });
+					await context.FollowUpAsync($"**No Vote Options registered.** Be sure to add some before attempting to Preview.", true);
 				}
 				else
 				{
@@ -148,7 +148,7 @@ namespace YumeChan.Essentials.Chat
 						previewBuilder.AppendLine($"**{index} :** {option.ReactionEmote} - {option.Description}");
 					}
 
-					await context.FollowUpAsync(new() { Content = previewBuilder.ToString() });
+					await context.FollowUpAsync(previewBuilder.ToString());
 				}
 			}
 		}
@@ -173,7 +173,7 @@ namespace YumeChan.Essentials.Chat
 			{
 				poll.PublishedPollMessage = await context.Channel.SendMessageAsync(BuildPollMessage(poll));
 				await AddPollReactionsAsync(poll, poll.PublishedPollMessage);
-				await context.FollowUpAsync(new() { Content = $"Published Poll ``{poll.Name}`` in channel ``{poll.PublishedPollMessage.Channel.Name}``." });
+				await context.FollowUpAsync($"Published Poll ``{poll.Name}`` in channel ``{poll.PublishedPollMessage.Channel.Name}``.", true);
 
 				// CurrentPolls.Add(poll);
 				DraftPolls.Remove(poll);
@@ -225,7 +225,7 @@ namespace YumeChan.Essentials.Chat
 				}
 				catch (NotFoundException) { }
 
-				await context.FollowUpAsync(new() {	Content = "Cannot perform action, no Poll was found.\nYou may initialize a Poll by typing ``/poll init``.", IsEphemeral = true });
+				await context.FollowUpAsync("Cannot perform action, no Poll was found.\nYou may initialize a Poll by typing ``/poll init``.", true);
 			}
 
 			return poll;
@@ -251,19 +251,6 @@ namespace YumeChan.Essentials.Chat
 			Notice = null;
 			VoteOptions = new(20);
 			PublishedPollMessage = null;
-		}
-
-		public static async Task<bool> VoteOptionsIndexIsOutsideRange(byte index, CommandContext context)
-		{
-			switch (index)
-			{
-				case > 20:
-					await context.Channel.SendMessageAsync($"{context.User.Mention} You have entered an index greater than 20. Please note that Discord only authorizes up to 20 reaction types per message.");
-					return true;
-
-				default:
-					return false;
-			}
 		}
 	}
 

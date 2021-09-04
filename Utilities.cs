@@ -57,7 +57,7 @@ namespace YumeChan.Essentials
 
 		public static string GetFullUsername(this DiscordUser user) => $"{user.Username}#{user.Discriminator}";
 
-		public static Task<DiscordMessage> FollowUpAsync(this InteractionContext ctx, string content, bool isEphemeral = false)
+		public static Task<DiscordMessage> FollowUpAsync(this BaseContext ctx, string content, bool isEphemeral = false)
 			=> ctx.FollowUpAsync(new() { Content = content, IsEphemeral = isEphemeral });
 	}
 }

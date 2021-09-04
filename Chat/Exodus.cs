@@ -19,7 +19,7 @@ namespace YumeChan.Essentials.Chat
 	{
 		[SlashCommand("from", "Moves all users from a specified voice channel.")]
 		public async Task FromChannelAsync(InteractionContext context,
-			[Option("Channel", "Voice channel to move users from")] DiscordChannel source)
+			[Option("channel", "Voice channel to move users from")] DiscordChannel source)
 		{
 			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
 

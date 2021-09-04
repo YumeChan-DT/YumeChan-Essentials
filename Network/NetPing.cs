@@ -1,6 +1,4 @@
 ﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using System;
@@ -31,7 +29,7 @@ namespace YumeChan.Essentials.Network
 			// 1B. Resolve if necessary
 			if (!TryResolveHostname(host, out IPAddress hostResolved, out Exception e))
 			{
-				await context.FollowUpAsync(new() { Content = $"Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}" });
+				await context.FollowUpAsync($"Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
 				return;
 			}
 

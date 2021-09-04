@@ -33,19 +33,11 @@ namespace YumeChan.Essentials.Chat
 
 				await context.TargetMember.SendMessageAsync(embed: embed.Build());
 
-				await context.FollowUpAsync(new()
-				{
-					Content = $"Sent {context.TargetMember.Mention} an invite to {currentChannel.Mention}.",
-					IsEphemeral = true
-				});
+				await context.FollowUpAsync($"Sent {context.TargetMember.Mention} an invite to {currentChannel.Mention}.", true);
 			}
 			else
 			{
-				await context.FollowUpAsync(new()
-				{
-					Content = "Please connect to a Voice Channel before inviting another user.",
-					IsEphemeral = true
-				});
+				await context.FollowUpAsync("Please connect to a Voice Channel before inviting another user.", true);
 			}
 		}
 	}

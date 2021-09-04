@@ -1,6 +1,4 @@
 ﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.SlashCommands;
 using System;
 using System.Linq;
@@ -21,16 +19,14 @@ namespace YumeChan.Essentials.Network
 
 			if (host.IsIPAddress())
 			{
-				await context.FollowUpAsync(new() { Content = $"Isn't ``{host}`` already an IP address ?" });
+				await context.FollowUpAsync($"Isn't ``{host}`` already an IP address ?", true);
 			}
 			else
 			{
-				await context.FollowUpAsync(new()
-				{
-					Content = TryResolveHostname(host, out string hostResolved, out Exception e)
-						? $"Hostname ``{host}`` resolves to IP Address ``{hostResolved}``."
-						: $"Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}"
-				});
+				await context.FollowUpAsync(TryResolveHostname(host, out string hostResolved, out Exception e)
+					? $"Hostname ``{host}`` resolves to IP Address ``{hostResolved}``."
+					: $"Hostname ``{host}`` could not be resolved. \nException Thrown : {e.Message}"
+				);
 			}
 		}
 
