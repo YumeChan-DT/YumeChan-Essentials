@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Nodsoft.YumeChan.Essentials.Network
+namespace YumeChan.Essentials.Network
 {
 	static class Utils
 	{

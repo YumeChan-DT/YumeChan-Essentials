@@ -1,83 +1,92 @@
-﻿using System;
+﻿using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
 
-namespace Nodsoft.YumeChan.Essentials.Chat
+#pragma warning disable CA1822
+
+
+namespace YumeChan.Essentials.Chat
 {
-	[Group("exodus"), RequireBotPermission(GuildPermission.MoveMembers)]
-	public class Exodus : ModuleBase<SocketCommandContext>
+	[SlashCommandGroup("exodus", "Provides commands for moving users from one channel to another.")]
+	[SlashRequireGuild, SlashRequirePermissions(Permissions.MoveMembers)]
+	public class Exodus : ApplicationCommandModule
 	{
-		[Command("from", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.MoveMembers)]
-		public async Task FromChannelAsync(ulong channelId)
+		[SlashCommand("from", "Moves all users from a specified voice channel.")]
+		public async Task FromChannelAsync(InteractionContext context,
+			[Option("channel", "Voice channel to move users from")] DiscordChannel source)
 		{
-			if ((Context.User as IGuildUser).VoiceChannel is IVoiceChannel dest and not null)
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+			if (context.Member.VoiceState.Channel is DiscordChannel dest)
 			{
-				if (Context.Guild.GetVoiceChannel(channelId) is IVoiceChannel source and not null)
+				if (source.Type is ChannelType.Voice)
 				{
-					if ((source as SocketVoiceChannel).Users.Count is 0)
+					if (source.Users.Count() is 0)
 					{
-						await ReplyAsync(EmptyChannelMessage).ConfigureAwait(false);
+						await context.FollowUpAsync(EmptyChannelMessage, true);
 					}
-
-					await ExodeAsync(source, dest);
+					else
+					{
+						await ExodeAsync(context, source, dest);
+					}
 				}
 				else
 				{
-					await ReplyAsync(GetInvalidChannelMessage(channelId)).ConfigureAwait(false);
-					return;
+					await context.FollowUpAsync(InvalidChannelMessage, true);
 				}
 			}
 			else
 			{
-				await ReplyAsync(NotVoiceConnectedMessage).ConfigureAwait(false);
-				return;
+				await context.FollowUpAsync(NotVoiceConnectedMessage, true);
 			}
 		}
 
-		[Command("to", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.MoveMembers)]
-		public async Task ToChannelAsync(ulong channelId)
+		[SlashCommand("to", "Moves all users to a specified voice channel.")]
+		public async Task ToChannelAsync(InteractionContext context,
+			[Option("channel", "Voice channel to move users to")] DiscordChannel dest)
 		{
-			if (Context.Guild.GetVoiceChannel(channelId) is IVoiceChannel dest and not null)
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+			if (dest.Type is ChannelType.Voice)
 			{
-				if ((Context.User as IGuildUser).VoiceChannel is IVoiceChannel source and not null)
+				if (context.Member.VoiceState.Channel is DiscordChannel source)
 				{
-					await ExodeAsync(source, dest);
+					await ExodeAsync(context, source, dest);
 				}
 				else
 				{
-					await ReplyAsync(GetInvalidChannelMessage(channelId)).ConfigureAwait(false);
-					return;
+					await context.FollowUpAsync(InvalidChannelMessage, true);
 				}
 			}
 			else
 			{
-				await ReplyAsync(NotVoiceConnectedMessage).ConfigureAwait(false);
-				return;
+				await context.FollowUpAsync(NotVoiceConnectedMessage, true);
 			}
 		}
 
 
-		internal async Task ExodeAsync(IVoiceChannel source, IVoiceChannel dest)
+		public static async Task ExodeAsync(InteractionContext context, DiscordChannel source, DiscordChannel dest)
 		{
-			IReadOnlyCollection<SocketGuildUser> users = (source as SocketVoiceChannel).Users;
+			int loadCount = source.Users.Count();
 
-			if (!await CheckChannelCapacityAsync(dest, users.Count).ConfigureAwait(false))
+			if (!await CheckChannelCapacityAsync(context, dest, loadCount).ConfigureAwait(false))
 			{
 				return;
 			}
 
-			Dictionary<IGuildUser, Exception> erroredUsers = new();
+			Dictionary<DiscordMember, Exception> erroredUsers = new();
 
-			await foreach (SocketGuildUser user in users.ToAsyncEnumerable().ConfigureAwait(false))
+			foreach (DiscordMember user in source.Users)
 			{
 				try
 				{
-					await user.ModifyAsync(user => user.Channel = new(dest)).ConfigureAwait(false);
+					await user.ModifyAsync(user => user.VoiceChannel = dest).ConfigureAwait(false);
 				}
 				catch (Exception e)
 				{
@@ -88,33 +97,38 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 			if (erroredUsers.Count is not 0)
 			{
 				StringBuilder builder = new($"**The following user{(erroredUsers.Count is 1 ? " was" : "s were")} unable to be moved :** \n");
-				foreach (KeyValuePair<IGuildUser, Exception> erroredUser in erroredUsers)
-				{
-					builder.AppendLine($" - {erroredUser.Key.Mention} - Reason : ``{erroredUser.Value.Message ?? "Unknown"}`` {(erroredUser.Value.Source is null ? null : $"(Source : ``{erroredUser.Value.Source}``)")} ");
-				}
-				builder.AppendLine($"\n{(erroredUsers.Count is 1 ? " This user" : "These users")} may have to be moved manually.");
 
-				await ReplyAsync(builder.ToString());
+				foreach (KeyValuePair<DiscordMember, Exception> erroredUser in erroredUsers)
+				{
+					builder.AppendFormat(" - {0} - Reason : ``{1}`` {2} \n", erroredUser.Key.Mention, erroredUser.Value.Message ?? "Unknown", erroredUser.Value.Source is null ? null : $"(Source : ``{erroredUser.Value.Source}``)");
+				}
+
+				builder.AppendFormat("\n{0} may have to be moved manually.", erroredUsers.Count is 1 ? " This user" : "These users");
+
+				await context.FollowUpAsync(builder.ToString());
 			}
 			else
 			{
-				await ReplyAsync($"{Context.User.Mention} All **{users.Count}** user{(users.Count is 1 ? null : "s")} successfully moved to ``{dest.Name}``.");
+				await context.FollowUpAsync($"All **{loadCount}** user{(loadCount is 1 ? null : "s")} successfully moved to ``{dest.Name}``.");
 			}
 		}
 
 
 
 
-		private async Task<bool> CheckChannelCapacityAsync(IVoiceChannel channel, int loadCount)
+		private static async Task<bool> CheckChannelCapacityAsync(InteractionContext context, DiscordChannel channel, int loadCount)
 		{
-			int currentCount = await channel.GetUsersAsync().CountAsync().ConfigureAwait(false);
+			int currentCount = channel.Users.Count();
 
-			if (channel.UserLimit is not null && loadCount > channel.UserLimit - currentCount)
+			if (channel.UserLimit is not 0 && loadCount > channel.UserLimit - currentCount)
 			{
-				await ReplyAsync($"{Context.User.Mention} Cannot move ; Destination channel ``{channel.Name}`` does not have enough user slots. : \n" +
-				$"(**{loadCount}** user{(loadCount is 1 ? null : "s")} to move, **{currentCount}** user{(currentCount is 1 ? null : "s")} currently in the channel.) \n" +
-				$"Channel has a limit of **{channel.UserLimit}**, and would be over-capacity by **{loadCount + currentCount - channel.UserLimit}**.").ConfigureAwait(false);
-				
+				StringBuilder stringBuilder = new StringBuilder()
+					.AppendFormat("Cannot move ; Destination channel ``{0}`` does not have enough user slots. : \n", channel.Name)
+					.AppendFormat("(**{0}** user{1} to move, **{2}** user{3} currently in the channel.) \n", loadCount, loadCount is 1 ? null : "s", currentCount, currentCount is 1 ? null : "s")
+					.AppendFormat("Channel has a limit of **{0}**, and would be over-capacity by **{1}**.", channel.UserLimit, loadCount + currentCount - channel.UserLimit);
+
+				await context.FollowUpAsync(stringBuilder.ToString(), true);
+
 				return false;
 			}
 
@@ -122,8 +136,8 @@ namespace Nodsoft.YumeChan.Essentials.Chat
 		}
 
 
-		private string EmptyChannelMessage => $"{Context.User.Mention} Source Channel is empty, nobody's moving.";
-		private string NotVoiceConnectedMessage => $"{Context.User.Mention} Please connect to a voice channel, then retry.";
-		private string GetInvalidChannelMessage(ulong id) => $"{Context.User.Mention} Invalid channel : ``{Context.Guild.GetVoiceChannel(id)?.Name ?? id.ToString()}``.";
+		private const string EmptyChannelMessage = "Source Channel is empty, nobody's moving.";
+		private const string NotVoiceConnectedMessage = "Please connect to a voice channel, then retry.";
+		private const string InvalidChannelMessage = "Invalid voice channel specified.";
 	}
 }

@@ -1,5 +1,6 @@
-﻿using Discord;
-using Discord.Commands;
+﻿using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,33 +11,36 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nodsoft.YumeChan.Essentials.Network
+#pragma warning disable CA1822
+
+namespace YumeChan.Essentials.Network
 {
-	[Group("ping")]
-	public class PingModule : ModuleBase<SocketCommandContext>
+	public partial class NetworkTopModule
 	{
-		[Command("", RunMode = RunMode.Async)]
-		public async Task NetworkPingCommand(string host)
+		[SlashCommand("ping", "Attemps to ping a specified Host.")]
+		public async Task NetworkPingCommand(InteractionContext context,
+			[Option("Host", "IP Address / Domain name to ping")] string host)
 		{
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
 
 			// 1A. Find out if supplied Hostname or IP
 			bool hostIsIP = host.IsIPAddress();
 
 			// 1B. Resolve if necessary
-			if (!Resolve.TryResolveHostname(host, out IPAddress hostResolved, out Exception e))
+			if (!TryResolveHostname(host, out IPAddress hostResolved, out Exception e))
 			{
-				await ReplyAsync($"{Context.User.Mention}, Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
+				await context.FollowUpAsync($"Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
 				return;
 			}
 
 			// 2. Ping the IP
 			const int PingCount = 4;
-			PingModuleReply[] pingReplies = TcpPing(hostResolved, 80, PingCount).Result;
+			PingModuleReply[] pingReplies = await ComplexPingAsync(hostResolved, PingCount);
 
 			// 3. Retrieve statistics			// 4. Return results to user with ReplyAsync(); (Perhaps Embed ?)
 			List<long> roundTripTimings = new();
 
-			EmbedBuilder embedBuilder = new()
+			DiscordEmbedBuilder embedBuilder = new()
 			{
 				Title = "Ping Results",
 				Description = $"Results of Ping on **{host}** {(hostIsIP ? ":" : $"({hostResolved}) :")}"
@@ -44,29 +48,30 @@ namespace Nodsoft.YumeChan.Essentials.Network
 
 			for (int i = 0; i < PingCount; i++)
 			{
-				EmbedFieldBuilder field = new() { Name = $"Ping {i}", IsInline = true };
+				string embedValue;
+
 				if (pingReplies[i].Status is IPStatus.Success)
 				{
-					field.Value = $"RTD = **{pingReplies[i].RoundTripTime}** ms";
+					embedValue = $"RTD = **{pingReplies[i].RoundTripTime}** ms";
 					roundTripTimings.Add(pingReplies[i].RoundTripTime);
 				}
 				else
 				{
-					field.Value = $"Error : **{pingReplies[i].Status}**";
+					embedValue = $"Error : **{pingReplies[i].Status}**";
 				}
 
-				embedBuilder.AddField(field);
+				embedBuilder.AddField($"Ping {i}", embedValue, true);
 			}
 
 			embedBuilder.AddField("Average RTD", roundTripTimings.Any()
 				? $"Average Round-Trip Time/Delay = **{roundTripTimings.Average()}** ms / **{roundTripTimings.Count}** packets"
-				: $"No RTD Average Assertable : No packets returned from Pings.");
+				: "No RTD Average Assertable : No packets returned from Pings.");
 
-			await ReplyAsync(message: Context.User.Mention, embed: embedBuilder.Build()); //Quote user in main message, and attach Embed.
+			await context.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedBuilder.Build()));
 		}
 
-		internal static async Task<PingModuleReply[]> ComplexPing(IPAddress host, int count) => await ComplexPing(host, count, 2000, new(64, true));
-		internal static async Task<PingModuleReply[]> ComplexPing(IPAddress host, int count, int timeout, PingOptions options)
+		internal static async Task<PingModuleReply[]> ComplexPingAsync(IPAddress host, int count) => await ComplexPingAsync(host, count, 2000, new(64, true));
+		internal static async Task<PingModuleReply[]> ComplexPingAsync(IPAddress host, int count, int timeout, PingOptions options)
 		{
 			PingModuleReply[] pingReplies = new PingModuleReply[count];
 
@@ -77,7 +82,7 @@ namespace Nodsoft.YumeChan.Essentials.Network
 			for (int i = 0; i < count; i++)
 			{
 				Ping ping = new();
-				pingReplies[i] = new PingModuleReply(await ping.SendPingAsync(host, timeout, buffer, options).ConfigureAwait(false));
+				pingReplies[i] = new PingModuleReply(await ping.SendPingAsync(host, timeout, buffer, options));
 				ping.Dispose();
 			}
 
@@ -85,7 +90,7 @@ namespace Nodsoft.YumeChan.Essentials.Network
 		}
 
 		// See : https://stackoverflow.com/questions/26067342/how-to-implement-psping-tcp-ping-in-c-sharp
-		internal static Task<PingModuleReply[]> TcpPing(IPAddress host, int port, int count)
+		internal static Task<PingModuleReply[]> TcpPingAsync(IPAddress host, int port, int count)
 		{
 			PingModuleReply[] pingReplies = new PingModuleReply[count];
 			for (int i = 0; i < count; i++)

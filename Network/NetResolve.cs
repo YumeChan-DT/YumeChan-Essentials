@@ -1,34 +1,38 @@
-﻿using Discord.Commands;
+﻿using DSharpPlus;
+using DSharpPlus.SlashCommands;
 using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace Nodsoft.YumeChan.Essentials.Network
+#pragma warning disable CA1822
+
+namespace YumeChan.Essentials.Network
 {
-	[Group("resolve")]
-	public class Resolve : ModuleBase<SocketCommandContext>
+	public partial class NetworkTopModule
 	{
-		[Command]
-		public async Task ResolveCommand(string host)
+		[SlashCommand("resolve", "Resolves the IP address behind a given domain name.")]
+		public async Task ResolveCommand(InteractionContext context,
+			[Option("Host", "Host to attempt resolution on.")] string host)
 		{
-			string contextUser = Context.User.Mention;
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
 
 			if (host.IsIPAddress())
 			{
-				await ReplyAsync($"{contextUser}, Isn't ``{host}`` already an IP address ?");
+				await context.FollowUpAsync($"Isn't ``{host}`` already an IP address ?", true);
 			}
 			else
 			{
-					await ReplyAsync(TryResolveHostname(host, out string hostResolved, out Exception e) 
-						? $"{contextUser}, Hostname ``{host}`` resolves to IP Address ``{hostResolved}``."
-						: $"{contextUser}, Hostname ``{host}`` could not be resolved.\nException Thrown : {e.Message}");
+				await context.FollowUpAsync(TryResolveHostname(host, out string hostResolved, out Exception e)
+					? $"Hostname ``{host}`` resolves to IP Address ``{hostResolved}``."
+					: $"Hostname ``{host}`` could not be resolved. \nException Thrown : {e.Message}"
+				);
 			}
 		}
 
 		public static async Task<IPAddress> ResolveHostnameAsync(string hostname)
 		{
-			IPAddress[] a = await Dns.GetHostAddressesAsync(hostname).ConfigureAwait(false);
+			IPAddress[] a = await Dns.GetHostAddressesAsync(hostname);
 			return a.FirstOrDefault();
 		}
 
@@ -41,6 +45,7 @@ namespace Nodsoft.YumeChan.Essentials.Network
 		public static bool TryResolveHostname(string hostname, out IPAddress resolved, out Exception exception)
 		{
 			IPAddress[] a;
+
 			try
 			{
 				a = Dns.GetHostAddresses(hostname);

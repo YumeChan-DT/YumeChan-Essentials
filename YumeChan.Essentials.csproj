@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Version>3.0-pre1</Version>
+		<TargetFramework>net5.0</TargetFramework>
+		<Authors>Sakura Akeno Isayeki</Authors>
+		<Company>Nodsoft Systems</Company>
+		<Product>YumeChan Essentials</Product>
+		<Copyright>GNU LGPLv3</Copyright>
+		<NeutralLanguage>en</NeutralLanguage>
+		<RepositoryUrl>https://github.com/YumeChan-DT/YumeChan-Essentials</RepositoryUrl>
+		<RepositoryType>Git</RepositoryType>
+		<Platforms>AnyCPU</Platforms>
+		<OutDir>$(SolutionDir)build\Plugins</OutDir>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Remove=".git" />
+		<None Remove=".gitignore" />
+		<None Remove="LICENSE" />
+		<None Remove="README.md" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="IDoEverything.DSharpPlus.SlashCommands" Version="2.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\YumeChan.PluginBase\YumeChan.PluginBase.csproj" />
+	</ItemGroup>
+
+</Project>
