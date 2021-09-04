@@ -1,6 +1,11 @@
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
+using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,44 +13,49 @@ using System.Threading.Tasks;
 
 namespace YumeChan.Essentials.Chat
 {
-	[Group("poll")]
-	public class PollModule : BaseCommandModule
+	[SlashCommandGroup("poll", "Provides commands for Poll creation."), SlashModuleLifespan(SlashModuleLifespan.Singleton)]
+	public class PollModule : ApplicationCommandModule
 	{
-		public List<Poll> DraftPolls { get; internal set; } = new List<Poll>();
+		public List<Poll> DraftPolls { get; internal set; } = new();
 //		public List<Poll> CurrentPolls { get; internal set; } = new List<Poll>();
 
 
-		[Command("init")]
-		public async Task InitPollAsync(CommandContext context)
+		[SlashCommand("init", "Initializes a new poll draft, or resets current one.")]
+		public async Task InitPollAsync(InteractionContext context)
 		{
-			DiscordMessage reply;
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new() { IsEphemeral = true });
 
-			if (QueryUserPoll(context.User, DraftPolls) is Poll poll)
+			if (GetUserPoll(context.User, DraftPolls) is Poll poll)
 			{
-				reply = await context.RespondAsync("Resetting existing Poll...");
 				DraftPolls.Find(x => x == poll).Reset();
+				await context.FollowUpAsync(new() { Content = "Resetted existing Poll." });
 			}
 			else
 			{
-				reply = await context.RespondAsync("Creating a new Poll...");
+				await context.FollowUpAsync(new() { Content = "Created new Poll." });
 				DraftPolls.Add(new(context.User));
 			}
-
-			await reply.ModifyAsync(msg => msg.Content += " Done !");
 		}
 
-		[Command("name")]
-		public async Task SetPollNameAsync(CommandContext context, [RemainingText] string name)
+		[SlashCommand("name", "Sets poll name.")]
+		public async Task SetPollNameAsync(InteractionContext context,
+			[Option("Name", "New name to set for this poll")] string name)
 		{
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new() { IsEphemeral = true });
+
 			if (await GetUserPollAsync(context) is Poll poll)
 			{
 				poll.Name = name;
 				await Utilities.MarkCommandAsCompleted(context);
 			}
 		}
-		[Command("notice")]
-		public async Task SetPollNoticeAsync(CommandContext context, [RemainingText] string notice)
+
+		[SlashCommand("notice", "Sets poll Notice (footer).")]
+		public async Task SetPollNoticeAsync(InteractionContext context,
+			[Option("Notice", "Poll notice to set")] string notice)
 		{
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new() { IsEphemeral = true });
+
 			if (await GetUserPollAsync(context) is Poll poll)
 			{
 				poll.Notice = notice;
@@ -53,9 +63,13 @@ namespace YumeChan.Essentials.Chat
 			}
 		}
 
-		[Command("addoption")]
-		public async Task AddPollOptionAsync(CommandContext context, DiscordEmoji reactionEmote, [RemainingText] string description)
+		[SlashCommand("add-option", "Add a new poll option.")]
+		public async Task AddPollOptionAsync(InteractionContext context,
+			[Option("emoji", "Emoji to attach poll option to")] DiscordEmoji reactionEmote,
+			[Option("description", "Description to set for poll option")] string description)
 		{
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new() { IsEphemeral = true });
+
 			if (await GetUserPollAsync(context) is Poll poll)
 			{
 				poll.VoteOptions.Add(new PollVoteOption { ReactionEmote = reactionEmote, Description = description });
@@ -63,7 +77,7 @@ namespace YumeChan.Essentials.Chat
 			}
 		}
 
-		//[Command("setoption"), Priority(1)]
+/*		//[Command("setoption"), Priority(1)]
 		public async Task SetPollOptionAsync(CommandContext context, byte index, DiscordEmoji reactionEmote, [RemainingText] string description)
 		{
 			if (await GetUserPollAsync(context) is Poll poll && !await Poll.VoteOptionsIndexIsOutsideRange(index, context))
@@ -81,18 +95,14 @@ namespace YumeChan.Essentials.Chat
 				await Utilities.MarkCommandAsCompleted(context);
 			}
 		}
-		[Command("removeoption"), Priority(1)]
-		public async Task RemovePollOptionAsync(CommandContext context, byte index)
+*/
+
+		[SlashCommand("remove-option", "Removes poll option for specified Emoji.")]
+		public async Task RemovePollOptionAsync(InteractionContext context,
+			[Option("emoji", "Emoji to remove poll option from")] DiscordEmoji emote)
 		{
-			if (await GetUserPollAsync(context) is Poll poll && !await Poll.VoteOptionsIndexIsOutsideRange(index, context))
-			{
-				poll.VoteOptions.RemoveAt(index);
-				await Utilities.MarkCommandAsCompleted(context);
-			}
-		}
-		[Command("removeoption")]
-		public async Task RemovePollOptionAsync(CommandContext context, DiscordEmoji emote)
-		{
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new() { IsEphemeral = true });
+
 			if (await GetUserPollAsync(context) is Poll poll)
 			{
 				try
@@ -100,14 +110,14 @@ namespace YumeChan.Essentials.Chat
 					poll.VoteOptions.Remove(poll.VoteOptions.First(option => option.ReactionEmote == emote));
 					await Utilities.MarkCommandAsCompleted(context);
 				}
-				catch (System.InvalidOperationException)
+				catch (InvalidOperationException)
 				{
-					await Utilities.MarkCommandAsFailed(context);
+					return;
 				}
 			}
 		}
-		[Command("clearoptions")]
-		public async Task ClearPollOptionsAsync(CommandContext context)
+		[SlashCommand("clear-options", "Clears all poll options.")]
+		public async Task ClearPollOptionsAsync(InteractionContext context)
 		{
 			if (await GetUserPollAsync(context) is Poll poll)
 			{
@@ -116,14 +126,16 @@ namespace YumeChan.Essentials.Chat
 			}
 		}
 
-		[Command("previewoptions")]
-		public async Task PreviewOptionsAsync(CommandContext context)
+		[SlashCommand("preview-options", "Lists all poll options currently set.")]
+		public async Task PreviewOptionsAsync(InteractionContext context)
 		{
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new() { IsEphemeral = true });
+
 			if (await GetUserPollAsync(context) is Poll poll)
 			{
 				if (poll.VoteOptions.Count is 0)
 				{
-					await context.RespondAsync($"**No Vote Options registered.** Be sure to add some before attempting to Preview.");
+					await context.FollowUpAsync(new() { Content = $"**No Vote Options registered.** Be sure to add some before attempting to Preview." });
 				}
 				else
 				{
@@ -136,36 +148,39 @@ namespace YumeChan.Essentials.Chat
 						previewBuilder.AppendLine($"**{index} :** {option.ReactionEmote} - {option.Description}");
 					}
 
-					await context.RespondAsync(previewBuilder.ToString());
+					await context.FollowUpAsync(new() { Content = previewBuilder.ToString() });
 				}
 			}
 		}
 
-		[Command("previewpoll")]
-		public async Task PreviewPollAsync(CommandContext context)
+		[SlashCommand("preview-poll", "Previews a draft poll.")]
+		public async Task PreviewPollAsync(InteractionContext context)
 		{
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new() { IsEphemeral = true });
+
 			if (await GetUserPollAsync(context) is Poll poll)
 			{
-				DiscordMessage message = await context.RespondAsync(BuildPollMessage(poll));
+				DiscordMessage message = await context.FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(BuildPollMessage(poll)));
 				await AddPollReactionsAsync(poll, message);
 			}
 		}
-		[Command("publish"), RequireGuild]
-		public async Task PublishPollAsync(CommandContext context)
+		[SlashCommand("publish", "Publishes a poll."), SlashRequireGuild, RequirePermissions(Permissions.SendMessages)]
+		public async Task PublishPollAsync(InteractionContext context)
 		{
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new() { IsEphemeral = true });
+
 			if (await GetUserPollAsync(context) is Poll poll)
 			{
 				poll.PublishedPollMessage = await context.Channel.SendMessageAsync(BuildPollMessage(poll));
 				await AddPollReactionsAsync(poll, poll.PublishedPollMessage);
-				await context.Member.SendMessageAsync($"Published Poll ``{poll.Name}`` in channel ``{poll.PublishedPollMessage.Channel.Name}``.");
-				await context.Message.DeleteAsync();
+				await context.FollowUpAsync(new() { Content = $"Published Poll ``{poll.Name}`` in channel ``{poll.PublishedPollMessage.Channel.Name}``." });
 
 				// CurrentPolls.Add(poll);
 				DraftPolls.Remove(poll);
 			}
 		}
 
-		public static Poll QueryUserPoll(DiscordUser user, List<Poll> list) => list.FirstOrDefault(poll => poll.Author.Id == user.Id);
+		public static Poll GetUserPoll(DiscordUser user, List<Poll> list) => list.FirstOrDefault(poll => poll.Author.Id == user.Id);
 
 		protected static DiscordEmbed BuildPollMessage(Poll poll)
 		{
@@ -198,14 +213,21 @@ namespace YumeChan.Essentials.Chat
 			}
 		}
 
-		private async Task<Poll> GetUserPollAsync(CommandContext context)
+		private async Task<Poll> GetUserPollAsync(InteractionContext context)
 		{
-			Poll poll = QueryUserPoll(context.User, DraftPolls);
+			Poll poll = GetUserPoll(context.User, DraftPolls);
 
 			if (poll is null)
 			{
-				await context.RespondAsync("Cannot perform action, no Poll was found.\nYou may initialize a Poll by typing ``==poll init``.");
+				try
+				{
+					await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new() { IsEphemeral = true });
+				}
+				catch (NotFoundException) { }
+
+				await context.FollowUpAsync(new() {	Content = "Cannot perform action, no Poll was found.\nYou may initialize a Poll by typing ``/poll init``.", IsEphemeral = true });
 			}
+
 			return poll;
 		}
 	}

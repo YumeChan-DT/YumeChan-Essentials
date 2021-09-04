@@ -1,6 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,6 +25,11 @@ namespace YumeChan.Essentials
 		}
 
 		public static async Task MarkCommandAsCompleted(CommandContext context) => await context.Message.CreateReactionAsync(GreenCheckEmoji);
+		public static async Task MarkCommandAsCompleted(InteractionContext context) => await context.FollowUpAsync(new()
+		{
+			Content = $"{GreenCheckEmoji} Done!",
+			IsEphemeral = true
+		});
 		public static async Task MarkCommandAsFailed(CommandContext context) => await context.Message.CreateReactionAsync(GreenCrossEmoji);
 
 		public static string BuildChannelLink(ChannelLinkTypes type, DiscordChannel channel)
