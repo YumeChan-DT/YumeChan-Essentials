@@ -1,7 +1,7 @@
 ﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,19 +13,23 @@ using System.Threading.Tasks;
 
 namespace YumeChan.Essentials.Chat
 {
-	[Group("exodus"), RequireGuild, RequireBotPermissions(Permissions.MoveMembers)]
-	public class Exodus : BaseCommandModule
+	[SlashCommandGroup("exodus", "Provides commands for moving users from one channel to another.")]
+	[SlashRequireGuild, SlashRequirePermissions(Permissions.MoveMembers)]
+	public class Exodus : ApplicationCommandModule
 	{
-		[Command("from"), RequireUserPermissions(Permissions.MoveMembers)]
-		public async Task FromChannelAsync(CommandContext context, ulong channelId)
+		[SlashCommand("from", "Moves all users from a specified voice channel.")]
+		public async Task FromChannelAsync(InteractionContext context,
+			[Option("Channel", "Voice channel to move users from")] DiscordChannel source)
 		{
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
 			if (context.Member.VoiceState.Channel is DiscordChannel dest)
 			{
-				if (context.Guild.Channels.GetValueOrDefault(channelId) is DiscordChannel source)
+				if (source.Type is ChannelType.Voice)
 				{
 					if (source.Users.Count() is 0)
 					{
-						await context.RespondAsync(EmptyChannelMessage);
+						await context.FollowUpAsync(EmptyChannelMessage, true);
 					}
 					else
 					{
@@ -34,19 +38,22 @@ namespace YumeChan.Essentials.Chat
 				}
 				else
 				{
-					await context.RespondAsync(InvalidChannelMessage);
+					await context.FollowUpAsync(InvalidChannelMessage, true);
 				}
 			}
 			else
 			{
-				await context.RespondAsync(NotVoiceConnectedMessage);
+				await context.FollowUpAsync(NotVoiceConnectedMessage, true);
 			}
 		}
 
-		[Command("to"), RequireUserPermissions(Permissions.MoveMembers)]
-		public async Task ToChannelAsync(CommandContext context, ulong channelId)
+		[SlashCommand("to", "Moves all users to a specified voice channel.")]
+		public async Task ToChannelAsync(InteractionContext context,
+			[Option("channel", "Voice channel to move users to")] DiscordChannel dest)
 		{
-			if (context.Guild.GetChannel(channelId) is DiscordChannel dest)
+			await context.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+			if (dest.Type is ChannelType.Voice)
 			{
 				if (context.Member.VoiceState.Channel is DiscordChannel source)
 				{
@@ -54,33 +61,28 @@ namespace YumeChan.Essentials.Chat
 				}
 				else
 				{
-					await context.RespondAsync(InvalidChannelMessage);
+					await context.FollowUpAsync(InvalidChannelMessage, true);
 				}
 			}
 			else
 			{
-				await context.RespondAsync(NotVoiceConnectedMessage);
+				await context.FollowUpAsync(NotVoiceConnectedMessage, true);
 			}
 		}
 
 
-		public static async Task ExodeAsync(CommandContext context, DiscordChannel source, DiscordChannel dest)
+		public static async Task ExodeAsync(InteractionContext context, DiscordChannel source, DiscordChannel dest)
 		{
-			if (source.Type is not ChannelType.Voice || dest.Type is not ChannelType.Voice)
-			{
-				throw new ArgumentException("Invalid Channel(s) specified.");
-			}
-		
-			IEnumerable<DiscordMember> members = source.Users;
+			int loadCount = source.Users.Count();
 
-			if (!await CheckChannelCapacityAsync(context, dest, members.Count()).ConfigureAwait(false))
+			if (!await CheckChannelCapacityAsync(context, dest, loadCount).ConfigureAwait(false))
 			{
 				return;
 			}
 
 			Dictionary<DiscordMember, Exception> erroredUsers = new();
 
-			foreach (DiscordMember user in members)
+			foreach (DiscordMember user in source.Users)
 			{
 				try
 				{
@@ -103,18 +105,18 @@ namespace YumeChan.Essentials.Chat
 
 				builder.AppendFormat("\n{0} may have to be moved manually.", erroredUsers.Count is 1 ? " This user" : "These users");
 
-				await context.RespondAsync(builder.ToString());
+				await context.FollowUpAsync(builder.ToString());
 			}
 			else
 			{
-				await context.RespondAsync($"All **{members.Count()}** user{(members.Count() is 1 ? null : "s")} successfully moved to ``{dest.Name}``.");
+				await context.FollowUpAsync($"All **{loadCount}** user{(loadCount is 1 ? null : "s")} successfully moved to ``{dest.Name}``.");
 			}
 		}
 
 
 
 
-		private static async Task<bool> CheckChannelCapacityAsync(CommandContext context, DiscordChannel channel, int loadCount)
+		private static async Task<bool> CheckChannelCapacityAsync(InteractionContext context, DiscordChannel channel, int loadCount)
 		{
 			int currentCount = channel.Users.Count();
 
@@ -125,8 +127,8 @@ namespace YumeChan.Essentials.Chat
 					.AppendFormat("(**{0}** user{1} to move, **{2}** user{3} currently in the channel.) \n", loadCount, loadCount is 1 ? null : "s", currentCount, currentCount is 1 ? null : "s")
 					.AppendFormat("Channel has a limit of **{0}**, and would be over-capacity by **{1}**.", channel.UserLimit, loadCount + currentCount - channel.UserLimit);
 
-				await context.RespondAsync(stringBuilder.ToString()).ConfigureAwait(false);
-				
+				await context.FollowUpAsync(stringBuilder.ToString(), true);
+
 				return false;
 			}
 
