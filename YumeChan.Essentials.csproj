@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Version>3.0-pre1</Version>
-		<TargetFramework>net5.0</TargetFramework>
+		<TargetFramework>net6.0</TargetFramework>
 		<Authors>Sakura Akeno Isayeki</Authors>
 		<Company>Nodsoft Systems</Company>
 		<Product>YumeChan Essentials</Product>
