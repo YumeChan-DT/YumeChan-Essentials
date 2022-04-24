@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 	<PropertyGroup>
 		<Version>3.0-pre1</Version>
 		<TargetFramework>net6.0</TargetFramework>
@@ -21,11 +21,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+	
+	<ItemGroup>
 		<ProjectReference Include="..\YumeChan.PluginBase\YumeChan.PluginBase.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="DSharpPlus.SlashCommands" Version="4.2.0-nightly-01102" />
+	  <PackageReference Include="DSharpPlus.SlashCommands" Version="4.2.*" />
 	</ItemGroup>
 
 </Project>
