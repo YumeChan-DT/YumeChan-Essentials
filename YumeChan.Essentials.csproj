@@ -10,7 +10,7 @@
 		<RepositoryUrl>https://github.com/YumeChan-DT/YumeChan-Essentials</RepositoryUrl>
 		<RepositoryType>Git</RepositoryType>
 		<Platforms>AnyCPU</Platforms>
-		<OutDir>$(SolutionDir)build\Plugins</OutDir>
+		<OutDir>$(SolutionDir)build\plugins</OutDir>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -25,11 +25,7 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-		<ProjectReference Include="..\YumeChan.PluginBase\YumeChan.PluginBase.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <PackageReference Include="DSharpPlus.SlashCommands" Version="4.2.*" />
+		<ProjectReference Include="..\YumeChan.PluginBase\YumeChan.PluginBase\YumeChan.PluginBase.csproj" />
 	</ItemGroup>
 
 </Project>
