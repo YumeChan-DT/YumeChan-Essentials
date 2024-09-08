@@ -16,6 +16,9 @@ public class PluginManifest : Plugin
 	}
 
 	public override string DisplayName => "Yume-Chan Essentials";
+	public override string Description => "Provides various utilities and features for Yume-Chan.";
+	public override string Author => "YumeChan DT (Nodsoft Systems)";
+	public override string AuthorContact => "admin@nodsoft.net";
 
 	public override bool StealthMode => false;
 
